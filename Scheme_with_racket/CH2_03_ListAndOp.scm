@@ -1,0 +1,62 @@
+#lang racket
+
+; This is an exercise program in <SICP> CH2.
+; Mainly about list operations.
+; Author : Brethland, Early 2019.
+
+(define (last-pair lis)
+    (if (null? (cdr lis))
+        (car lis)
+        (last-pair (cdr lis))))
+; (last-pair (list 23 72 149 34))
+(define (reverse lis)
+    (define (reverse-cons lis res)
+        (if (null? lis)
+            res
+            (reverse-cons (cdr lis) (cons (car lis) res))))
+    (reverse-cons lis `()))
+; (reverse (list 1 4 9 16 25))
+; (define (cc amount coin-values)
+;     (define (no-more? coin-values)
+;         (if (null? coin-values) #t #f))
+;     (define (except-first-denomination coin-values)
+;         (cdr coin-values))
+;     (define (first-denomination coin-values)
+;         (car coin-values))
+;     (cond ((= amount 0) 1)
+;           ((or (< amount 0) (no-more? coin-values)) 0)
+;           (else (+ (cc amount
+;                         (except-first-denomination coin-values))
+;                     (cc (- amount
+;                             (first-denomination coin-values))
+;                         coin-values)))))
+; (define us-coins (list 25 50 10 5 1))
+; (define uk-coins (list 100 50 20 10 5 2 1 0.5))
+; (cc 100 us-coins)
+(define (id x) x)
+(define (filtered-accumulate-list combiner term lis filter)
+    (define (iter lis result)
+        (cond ((null? lis) result)
+              ((filter (term (car lis))) (iter (cdr lis) (combiner (term (car lis)) result)))
+              (else (iter (cdr lis) result))))
+    (iter lis `()))
+(define (same-parity x . res)
+    (define (is-same-parity? x)
+        (lambda (a) (= (remainder a 2) (remainder x 2))))
+    (reverse (filtered-accumulate-list cons id (cons x res) (is-same-parity? x))))
+; (same-parity 1 2 3 4 5 6 7 8 9)
+; (define (square-list items)
+;     (if (null? items)
+;         nil
+;         (cons (* (car items) (car items))
+;               (square (cdr items)))))
+; (define (square-list items)
+;     (map square items))
+(define (for-each proc lis)
+    (if (null? lis)
+        #t
+        (and (proc (car lis)) (for-each proc (cdr lis)))))
+; (for-each (lambda (x) (= (remainder x 2) 1)) (list 1 3 5 7 9))
+(define (for-each pro lis)
+    (if (not (null? lis))
+        ((proc (car lis)) (for-each proc (cdr lis)))))

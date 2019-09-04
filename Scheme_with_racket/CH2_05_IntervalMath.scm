@@ -1,0 +1,70 @@
+#lang racket
+
+; This is an exercise program in <SICP> CH2.
+; Mainly about Interval Mathematics.
+; Author : Brethland, Early 2019.
+
+(define (make-percent c per)
+    (cons (- c (* c per 0.01)) (+ c (* c per 0.01))))
+(define (make-interval a b) (cons a b))
+(define (lower-bound inter) (min (car inter) (cdr inter)))
+(define (upper-bound inter) (max (car inter) (cdr inter)))
+; (lower-bound (make-interval 3.46 2.31))
+(define (center i)
+    (/ (+ (lower-bound i) (upper-bound i)) 2))
+(define (width i)
+    (/ (- (upper-bound i) (lower-bound i)) 2))
+(define (percent i)
+    (* (/ (width i) (center i)) 100))
+(define (add-interval x y)
+    (make-interval (+ (lower-bound x) (lower-bound y))
+                   (+ (upper-bound x) (upper-bound y))))
+(define (sub-interval x y)
+    (add-interval x
+                  (make-interval (- (upper-bound y)) (- (lower-bound y)))))
+(define int1 (make-interval 2.65 6.71))
+(define int2 (make-interval (- 3.43) 1.44)) 
+; (sub-interval int1 int2)
+(define (mul-interval-old x y)
+    (let ((p1 (* (lower-bound x) (lower-bound y)))
+          (p2 (* (lower-bound x) (upper-bound y)))
+          (p3 (* (upper-bound x) (lower-bound y)))
+          (p4 (* (upper-bound x) (upper-bound y))))
+        (make-interval (min p1 p2 p3 p4)
+                       (max p1 p2 p3 p4))))
+(define (mul-interval x y)
+    (let ((a (lower-bound x))
+          (b (upper-bound x))
+          (c (lower-bound y))
+          (d (upper-bound y)))
+          (cond ((and (> b 0) (< c 0) (> d 0)) (make-interval (* b c) (* b d)))
+                ((and (and (> a 0) (> c 0))
+                      (and (< b 0) (< d 0))) (make-interval (* a c) (* b d)))
+                ((and (> b 0) (< d 0)) (make-interval (* b c) (* a d)))
+                ((and (< a 0) (> b 0) (> c 0)) (make-interval (* a d) (* b d)))
+                ((and (< b 0) (> c 0)) (make-interval (* a d) (* b c)))
+                ((and (< b 0) (< c 0) (> d 0)) (make-interval (* a d) (* a c))))))
+(define (zero-check? int)
+    (cond ((and (< (lower-bound int) 0) (> (upper-bound int) 0)) 1)
+          ((or (= (lower-bound int) 0) (= (upper-bound int) 0)) 1)
+          (else 0)))
+(define (div-interval x y)
+    (if (= (zero-check? y) 1)
+        (display "Error:Interval contains zero.")
+        (mul-interval x
+                      (make-interval (/ 1.0 (upper-bound y))
+                                     (/ 1.0 (lower-bound y))))))
+(define (par1 r1 r2)
+  (div-interval 
+   (mul-interval r1 r2)
+   (add-interval r1 r2)))
+
+(define (par2 r1 r2)
+  (let ((one (make-interval 1 1)))
+    (div-interval 
+     one
+     (add-interval 
+      (div-interval one r1) 
+      (div-interval one r2)))))
+; (mul-interval int1 int2)
+; (mul-interval-old int1 int2)
