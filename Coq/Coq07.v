@@ -144,4 +144,60 @@ Fixpoint count (ele: nat) (s : bag) :=
             end
   end.
 
- 
+Definition sum : bag -> bag -> bag := app.
+
+Definition add (v : nat) (s : bag) :=
+  v :: s.
+
+Definition member(v : nat) (s : bag) :=
+  match count v s with
+  | O => false
+  | _ => true
+  end.
+
+Fixpoint remove_one (v : nat) (s : bag) :=
+  match s with
+  | nil => nil
+  | x :: y => match beq_n v x with
+              | true => y
+              | false => x :: (remove_one v y)
+             end
+  end.
+
+Fixpoint remove_all (v : nat) (s : bag) :=
+  match s with
+  | nil => nil
+  | x :: y => match beq_n v x with
+              | true => (remove_all v y)
+              | false => x :: (remove_all v y)
+             end
+  end.
+
+Fixpoint subset (s1 s2 :bag) :=
+  match s1 with
+  | nil => true
+  | x :: y => if member x s2 then subset y (remove_one x s2)
+                              else false
+  end.
+
+Lemma add_and_cons: forall (x : nat) (s : bag), add x s = x :: s.
+Proof.
+  auto.
+Qed.
+
+Lemma add_1_for_count: forall (b : nat) (s : bag), count b s = 0 -> count b (add b s) = 1.
+Proof.
+  intros .
+  destruct s.
+  - simpl. rewrite <- H. simpl.
+    induction b.
+    + auto.
+    + apply IHb. simpl. auto.
+  - rewrite -> add_and_cons.
+    induction b.
+    + rewrite <- H. auto.
+Abort.
+
+
+
+    
