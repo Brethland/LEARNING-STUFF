@@ -185,19 +185,38 @@ Proof.
   auto.
 Qed.
 
-Lemma add_1_for_count: forall (b : nat) (s : bag), count b s = 0 -> count b (add b s) = 1.
+(* Lemma add_1_for_count: forall (b : nat) (s : bag), count b s = 0 -> count b (add b s) = 1.
 Proof.
-  intros .
+  intros.
   destruct s.
   - simpl. rewrite <- H. simpl.
     induction b.
     + auto.
     + apply IHb. simpl. auto.
   - rewrite -> add_and_cons.
+
     induction b.
     + rewrite <- H. auto.
-Abort.
+Abort. *)
 
+Lemma silly_lemma_that_you_dont_need_if_you_use_std_lib : forall p : nat,
+  beq_n p p = true.
+Proof.
+  intro.
+  induction p.
+  - trivial.
+  - simpl.
+    rewrite IHp.
+    reflexivity.
+Qed.
 
-
-    
+Lemma add_1_for_count: forall (b : nat) (s : bag),
+  count b s = 0 -> count b (b :: s) = 1.
+Proof.
+  intros.
+  unfold count.
+  rewrite silly_lemma_that_you_dont_need_if_you_use_std_lib.
+  fold count.
+  rewrite H.
+  auto.
+Qed.
