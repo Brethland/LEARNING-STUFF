@@ -3,6 +3,8 @@
   Author : Brethland.
 *)
 
+From Coq Require Import Setoid.
+
 Fixpoint evenb(n : nat) :=
   match n with
   | O => true
@@ -281,7 +283,7 @@ Proof.
 Qed.
 
 Lemma app_assoc : forall l1 l2 l3 : natlist,
-  l1 ++ l2 ++ l3 = (l1 ++ l2) ++ l3.
+  l1 ++ (l2 ++ l3) = (l1 ++ l2) ++ l3.
 Proof.
   intros.
   induction l1.
@@ -318,7 +320,7 @@ Proof.
     auto.
 Qed.
 
-Lemma app_assoc4: forall l1 l2 l3 l4 : natlist,
+(* Lemma app_assoc4: forall l1 l2 l3 l4 : natlist,
   l1 ++ (l2 ++ (l3 ++ l4)) = (l1 ++ (l2 ++ l3)) ++ l4.
 Proof.
   intros.
@@ -330,6 +332,14 @@ Proof.
   - simpl.
     rewrite -> IHl1.
     auto.
+Qed. *)
+
+Lemma app_assoc4 : forall l1 l2 l3 l4 : natlist,
+  l1 ++ (l2 ++ (l3 ++ l4)) = (l1 ++ (l2 ++ l3)) ++ l4.
+Proof.
+  intros.
+  rewrite 3 app_assoc.
+  auto.
 Qed.
 
 Lemma nonzeros_app : forall l1 l2 : natlist,

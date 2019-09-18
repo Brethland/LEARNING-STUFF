@@ -10,6 +10,8 @@ Fixpoint repeat (X : Type) (x : X) (m : nat) :=
   | S m' => cons X x (repeat X x m')
   end.
 
+Module Mumble.
+
 Inductive mumble : Type :=   
   | a : mumble   
   | b : mumble -> nat -> mumble   
@@ -20,6 +22,8 @@ Inductive grumble (X:Type) : Type :=
   | e : X -> grumble X.
 
 Check c.
+
+End Mumble.
 
 Arguments nil {X}.
 Arguments cons {X} _ _ .
@@ -130,5 +134,50 @@ Fixpoint filter {X : Type} (f : X -> bool) (l : list X) :=
   | [] => []
   | x :: s => if f x then x :: filter f s
                     else filter f s
+  end.
+
+Fixpoint evenb (n : nat) :=
+  match n with
+  | O => true
+  | S O => false
+  | S (S n') => evenb n'
+  end. 
+
+Fixpoint gtn (n m : nat) :=
+  match n , m with
+  | O , _ => false
+  | S n' , O => true
+  | S n' , S m' => gtn n' m'
+  end.
+
+Definition filter_even_gt7 (l : list nat) :=
+  filter (fun s => (andb (evenb s) (gtn s 7))) l.
+
+(* Definition regf {X : Type} (f : X -> bool) : X -> bool :=
+  if f _ the*)
+
+Definition not_b (b : bool) :=
+  match b with
+  | true => false
+  | _    => true
+  end.
+
+Definition compose {A B C : Type} (f : B -> C) (g : A -> B) :=
+  fun x => f (g x).
+
+Check compose not_b.
+
+Definition partition {X : Type} (f : X -> bool) (l : list X) :=
+  ((filter f l) , (filter (compose not_b f) l)).
+
+Compute (partition evenb [1;1;4;5;1;4]).
+
+Fixpoint partition2 {X : Type} (f : X -> bool) (l : list X) :=
+  match l with
+  | nil      => ([], [])
+  | cons x s => match f x with
+                | true  => pair_app ([x] , [ ]) (partition2 f s)
+                | false => pair_app ([ ] , [x]) (partition2 f s)
+                end
   end.
 
