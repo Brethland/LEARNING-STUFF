@@ -96,6 +96,14 @@ Fixpoint beq_n (n m :nat) :=
   | S n', S m' => beq_n n' m'
   end.
 
+Lemma beq_n_refl : forall n : nat, beq_n n n = true.
+Proof.
+  intros.
+  induction n.
+  - auto.
+  - trivial.
+Qed.
+
 Fixpoint nonzero (l : natlist) :=
   match l with
   | nil => nil
@@ -220,3 +228,299 @@ Proof.
   rewrite H.
   auto.
 Qed.
+
+Fixpoint rev (l : natlist) :=
+  match l with
+  | nil => nil
+  | x :: s => rev s ++ [x]
+  end.
+
+Compute (rev [1;2;3]).
+
+Lemma app_length : forall l1 l2 : natlist,
+  length (l1 ++ l2) = (length l1) + (length l2).
+Proof.
+  intros.
+  induction l1 as [| n l1' IHl1'].
+  - reflexivity.
+  - simpl.
+    auto.
+Qed.
+
+Lemma silly_pred : forall n : nat, n + 1 = S n.
+Proof.
+  intros.
+  induction n.
+  - auto.
+  - simpl.
+    rewrite <- IHn.
+    auto.
+Qed.
+
+
+Lemma rev_length : forall l : natlist,
+  length l = length (rev l).
+Proof.
+  intros.
+  induction l.
+  - auto.
+  - simpl.
+    rewrite -> app_length,silly_pred.
+    rewrite <- IHl.
+    auto.
+Qed.
+
+Lemma app_nil_r : forall l : natlist, l ++ [] = l.
+Proof.
+  intros.
+  induction l.
+  - auto.
+  - simpl.
+    rewrite -> IHl.
+    auto.
+Qed.
+
+Lemma app_assoc : forall l1 l2 l3 : natlist,
+  l1 ++ l2 ++ l3 = (l1 ++ l2) ++ l3.
+Proof.
+  intros.
+  induction l1.
+  - auto.
+  - simpl.
+    rewrite <- IHl1.
+    auto.
+Qed.
+
+
+Lemma rev_app_distr : forall l1 l2 : natlist,
+  rev (l1 ++ l2) = rev l2 ++ rev l1.
+Proof.
+  intros.
+  induction l1.
+  - simpl. 
+    rewrite -> app_nil_r.
+    auto.
+  - simpl.
+    rewrite -> IHl1.
+    rewrite <- app_assoc.
+    auto.
+Qed.
+
+Lemma rev_involutive : forall l : natlist,
+  rev (rev l) = l.
+Proof.
+  intros.
+  induction l.
+  - auto.
+  - simpl.
+    rewrite -> rev_app_distr.
+    rewrite -> IHl.
+    auto.
+Qed.
+
+Lemma app_assoc4: forall l1 l2 l3 l4 : natlist,
+  l1 ++ (l2 ++ (l3 ++ l4)) = (l1 ++ (l2 ++ l3)) ++ l4.
+Proof.
+  intros.
+  induction l1.
+  - rewrite -> app_assoc.
+    simpl.
+    rewrite -> app_assoc.
+    auto.
+  - simpl.
+    rewrite -> IHl1.
+    auto.
+Qed.
+
+Lemma nonzeros_app : forall l1 l2 : natlist,
+  nonzero (l1 ++ l2) = (nonzero l1) ++ (nonzero l2).
+Proof.
+  intros.
+  induction l1.
+  - auto.
+  - destruct n.
+    + auto.
+    + simpl.
+      rewrite -> IHl1.
+      auto.
+Qed.
+
+Fixpoint beq_natlist (l1 l2 : natlist) :=
+  match l1 with
+  | nil => match l2 with
+           | nil => true
+           | x :: s => false
+          end
+  | x :: s => match l2 with
+            | nil => false
+            | y :: t => if beq_n x y then beq_natlist s t
+                                    else false
+          end
+  end.
+
+Compute (beq_natlist [1;2;3] [1;2;4]).
+
+Lemma beq_natlist_refl : forall l : natlist,
+  beq_natlist l l = true.
+Proof.
+  intros.
+  induction l.
+  - auto.
+  - simpl.
+    rewrite -> beq_n_refl.
+    trivial.
+Qed.
+
+Fixpoint leb (n m : nat) : bool :=
+  match n with
+  | O => true
+  | S n' =>
+      match m with
+      | O => false
+      | S m' => leb n' m'
+      end
+  end.
+
+Lemma count_member_nonzero : 
+  forall (s : bag), leb 1 (count 1 (1 :: s)) = true.
+Proof.
+  intros.
+  induction s.
+  - auto.
+  - trivial.
+Qed.
+
+Lemma ble_n_Sn : forall n : nat,
+  leb n (S n) = true.
+Proof.
+  intros.
+  induction n.
+  - auto.
+  - simpl. rewrite -> IHn.
+    auto.
+Qed.
+
+Lemma remove_does_not_increase_count :
+  forall (s : bag), leb (count 0 (remove_one 0 s)) (count 0 s) = true.
+Proof.
+  intros.
+  induction s.
+  - auto.
+  - destruct n.
+    + simpl. rewrite -> ble_n_Sn.
+      auto.
+    + simpl.
+      trivial.
+Qed.
+
+Lemma rev_app : forall (n : nat) (l : natlist),
+  rev (n :: l) = rev l ++ [n].
+Proof.
+  intros.
+  induction l.
+  - auto.
+  - auto.
+Qed.
+
+Lemma rev_injective : forall (l1 l2 : natlist),
+  rev l1 = rev l2 -> l1 = l2.
+Proof.
+  intros.
+Abort.
+
+Inductive natoption : Type :=
+  | Some : nat -> natoption
+  | None : natoption.
+
+Definition hd_error (l : natlist) :=
+  match l with
+  | nil => None
+  | x :: s => Some x
+  end.
+
+Definition option_elim (n : natoption) (d : nat) :=
+  match n with
+  | Some n' => n'
+  | None => d
+  end.
+
+Lemma option_elim_hd : forall (l : natlist) (d : nat),
+  hd d l = option_elim (hd_error l) d.
+Proof.
+  intros.
+  induction l.
+  - auto.
+  - auto.
+Qed.
+
+Inductive id : Type :=
+  | Id : nat -> id.
+
+Definition beq_id (a b : id) :=
+  match a,b with
+  | Id a', Id b' => beq_n a' b'
+  end.
+
+Lemma beq_id_refl : forall x : id, beq_id x x = true.
+Proof.
+  intros.
+  destruct x.
+  - simpl.
+    apply beq_n_refl.
+Qed.
+
+Inductive partial_map : Type :=
+  | empty : partial_map
+  | record : id -> nat -> partial_map -> partial_map.
+
+Definition update (d : partial_map) (x : id) (value : nat) :=
+  record x value d.
+
+Fixpoint find (x : id) (d : partial_map) :=
+  match d with
+  | empty => None
+  | record y v d' => if beq_id x y then Some v
+                                else find x d'
+  end.
+
+Lemma update_eq : forall (d : partial_map) (x : id) (o : nat),
+  find x (update d x o) = Some o.
+Proof.
+  intros.
+  simpl.
+  rewrite -> beq_id_refl.
+  auto.
+Qed.
+
+Lemma update_neq : forall (d : partial_map) (x y : id) (o : nat),
+  beq_id x y = false -> find x (update d y o) = find x d.
+Proof.
+  intros.
+  simpl.
+  rewrite -> H.
+  auto.
+Qed.
+
+Inductive baz : Type :=
+  | Baz1 : baz -> baz
+  | Baz2 : baz -> bool -> baz.
+
+Definition bazp (b : baz) := Baz2 b true.
+
+Definition baz_elim (b : baz) :=
+  match b with
+  | Baz1 b' => b'
+  | Baz2 b' _ => b'
+  end.
+
+Lemma baz_exp : forall b : baz, baz_elim (bazp b) = b.
+Proof.
+  intros.
+  destruct b.
+  - auto.
+  - auto.
+Qed.
+
+ 
+
+
