@@ -1,3 +1,6 @@
+From Coq Require Import Arith.
+From Coq Require Import Bool.
+
 Inductive list ( X : Type) : Type :=
   | nil : list X
   | cons : X -> list X -> list X.
@@ -29,7 +32,7 @@ Arguments nil {X}.
 Arguments cons {X} _ _ .
 Arguments repeat {X} x m.
 
-Fixpoint app {X : Type} (l1 l2 : list X)              
+Fixpoint app {X : Type} (l1 l2 : list X)
               : (list X) :=   
   match l1 with   
   | nil => l2   
@@ -105,7 +108,7 @@ Definition snd {X Y : Type} (p : X * Y) : Y :=
   | (x , y) => y   
   end.
 
-Fixpoint combine {X Y : Type} (lx : list X) (ly : list Y)            
+Fixpoint combine {X Y : Type} (lx : list X) (ly : list Y)
               : list (X*Y) :=   
   match lx, ly with   
   | [], _ => []   
@@ -180,4 +183,55 @@ Fixpoint partition2 {X : Type} (f : X -> bool) (l : list X) :=
                 | false => pair_app ([ ] , [x]) (partition2 f s)
                 end
   end.
+
+Fixpoint map {X Y : Type} (f : X -> Y) (l : list X) :=
+  match l with
+  | [] => []
+  | x :: s => (f x) :: map f s
+  end.
+
+Lemma map_app : forall (X Y : Type) (f : X -> Y) (l1 l2 : list X),
+  map f (l1 ++ l2) = map f l1 ++ map f l2.
+Proof.
+  intros.
+  induction l1.
+  - auto.
+  - simpl.
+    rewrite <- IHl1.
+    auto.
+Qed.
+
+Lemma map_rev : forall (X Y : Type) (f : X -> Y) (l : list X),
+  map f (rev l) = rev (map f l).
+Proof.
+  intros.
+  induction l.
+  - auto.
+  - simpl.
+    rewrite -> map_app.
+    simpl.
+    rewrite <- IHl.
+    auto.
+Qed.
+
+Fixpoint flat_map {X Y : Type} (f : X -> list Y) (l : list X) :=
+  match l with
+  | [] => []
+  | x :: s => f x ++ flat_map f s
+  end.
+
+Fixpoint fold {X Y : Type} (f : X -> Y -> Y) (l : list X) (b : Y) :=
+  match l with
+  | [] => b
+  | x :: s => f x (fold f s b)
+  end.
+
+Fixpoint beq_n (x y : nat) :=
+  match x,y with
+  | O, O => true
+  | S x' , O => false
+  | O , S y' => false
+  | S x' , S y' => beq_n x' y'
+  end.
+Compute (fold (fun x y => andb (beq_n x 0) y) [0;1;0] true).
 
