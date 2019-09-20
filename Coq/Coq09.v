@@ -1,3 +1,8 @@
+(*
+  Exercise for <Software Foundations> CH4.
+  Author : Brethland.
+*)
+
 From Coq Require Import Arith.
 From Coq Require Import Bool.
 
@@ -235,3 +240,46 @@ Fixpoint beq_n (x y : nat) :=
   end.
 Compute (fold (fun x y => andb (beq_n x 0) y) [0;1;0] true).
 
+Definition fold_length {X : Type} (l : list X) : nat :=   
+  fold (fun _ n => S n) l 0. 
+
+Lemma fold_length_correct : forall (X : Type) (l : list X),
+  fold_length l = length l.
+Proof.
+  intros.
+  induction l.
+  - auto.
+  - simpl.
+    rewrite <- IHl.
+    unfold fold_length.
+    auto.
+Qed.
+
+Definition fold_map {X Y : Type} (f : X -> Y) (l : list X) :=
+  fold (fun x n => (f x) :: n) l [].
+
+Lemma fold_map_correct : forall (X Y : Type) (f : X -> Y) (l : list X),
+  fold_map f l = map f l.
+Proof.
+  intros.
+  induction l.
+  - auto.
+  - simpl.
+    rewrite <- IHl.
+    unfold fold_map.
+    simpl.
+    auto.
+Qed.
+
+Definition prod_curry {X Y Z : Type}   (f : X * Y -> Z) (x : X) (y : Y) : Z := f (x, y).
+Definition prod_uncurry {X Y Z : Type} (f : X -> Y -> Z) (p : X * Y) :=
+  f (fst p) (snd p).
+
+Lemma curry_involutive : forall (X Y Z : Type) (f : X -> Y -> Z) x y,
+  prod_curry (prod_uncurry f) x y = f x y.
+Proof.
+  intros.
+  unfold prod_curry.
+  unfold prod_uncurry.
+  auto.
+Qed.
