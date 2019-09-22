@@ -6,6 +6,7 @@
 From Coq Require Import Peano.
 From Coq Require Import Nat.
 From Coq Require Import Arith.
+From Coq Require Import List.
 
 Lemma and_intro : forall (A B : Prop),
   A -> B -> and A B.
@@ -226,5 +227,26 @@ Proof.
   - intros [[x1 E1] | [x2 E2]].
     exists x1. left. auto.
     exists x2. right. auto.
+Qed.
+
+Fixpoint In {X : Type} (x : X) (l : list X) :=
+  match l with
+  | nil => False
+  | cons e es => x = e \/ In x es
+  end.
+
+Notation "x :: y" := (cons x y)
+                    (at level 60, right associativity).
+Notation "[ ]" := nil. 
+Notation "[ x ; .. ; y ]" := (cons x .. (cons y []) ..).
+Notation "x ++ y" := (app x y)
+                    (at level 60, right associativity).
+
+Example In_example :  forall n, In n [2;4] -> exists n', n = 2 * n'.
+Proof.
+  simpl.
+  intros n [H | [H | []]].
+  - exists 1. auto.
+  - exists 2. auto.
 Qed.
 
