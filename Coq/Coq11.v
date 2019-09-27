@@ -286,7 +286,7 @@ Proof.
   - intros. simpl in H. right. auto.
   - simpl. intros [HA | HB].
     + left. left. auto.
-    + apply IHl1 in HB.
+    + apply IHl1 in HB. (* or_assoc *)
       destruct HB.
       ++ left. right. auto.
       ++ right. auto.
@@ -333,10 +333,10 @@ Definition combine_odd_even (Podd Peven : nat -> Prop) :=
 
 Require Import Unicode.Utf8.
 
-Theorem combine_odd_even_intro :   ∀ (Podd Peven : nat → Prop) (n : nat),     
-  (odd n = true → Podd n) →     
-  (odd n = false → Peven n) →     
-  combine_odd_even Podd Peven n. 
+Theorem combine_odd_even_intro :   ∀ (Podd Peven : nat → Prop) (n : nat),
+  (odd n = true → Podd n) →
+  (odd n = false → Peven n) →
+  combine_odd_even Podd Peven n.
 Proof.
   intros.
   unfold combine_odd_even.
