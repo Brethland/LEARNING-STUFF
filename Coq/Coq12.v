@@ -329,10 +329,12 @@ Qed.
 Definition fR : nat -> nat -> nat :=
   (fun n m => (n + m)).
 
-Inductive R : nat → nat → nat → Prop :=    
-  | c1 : R 0 0 0    
-  | c2 : ∀ m n o, R m n o → R (S m) n (S o)    
+Inductive R : nat → nat → nat → Prop :=
+  | c1 : R 0 0 0
+  | c2 : ∀ m n o, R m n o → R (S m) n (S o)
   | c3 : ∀ m n o, R m n o → R m (S n) (S o).
+
+(* R m (S n) (S o) = R (S m) n (S o) *)
 
 Lemma R_O : forall n, R 0 n n.
 Proof.
@@ -369,4 +371,57 @@ Proof.
          simpl in H. rewrite <- plus_n_Sm in H.
          rewrite <- H. apply c3. apply IHn. auto.
 Qed.
+
+Inductive subseq : (list nat) -> (list nat) -> Prop :=
+  | nil_sub : subseq nil nil
+  | app1 : forall (l1 l2 : list nat) (x : nat), subseq l1 l2 -> subseq l1 (x :: l2)
+  | app2 : forall (l1 l2 : list nat) (x : nat), subseq l1 l2 -> subseq (x :: l1) (x :: l2).
+
+Require Import List.
+
+Lemma subseq_refl : forall (l : list nat), subseq l l.
+Proof.
+  intros.
+  induction l.
+  - apply nil_sub.
+  - apply app2. auto.
+Qed.
+
+Lemma subseq_nil : forall l, subseq nil l.
+Proof.
+  intros.
+  induction l.
+  - apply nil_sub.
+  - apply app1.
+    auto.
+Qed.
+
+Lemma cons_app : forall l1 l2 (x : nat), (x :: l1) ++ l2 = x :: (l1 ++ l2).
+Proof.
+  intros.
+  generalize dependent l2.
+  induction l1.
+  - intros. simpl. auto.
+  - intros. simpl. auto.
+Qed.
+
+Lemma subseq_app : forall l1 l2 l3, subseq l1 l2 -> subseq l1 (l2 ++ l3).
+Proof.
+  intros.
+  induction H.
+  - simpl. apply subseq_nil.
+  - rewrite cons_app. apply app1. auto.
+  - rewrite cons_app. apply app2. auto.
+Qed.
+
+Lemma subseq_trans : forall l1 l2 l3, subseq l1 l2 -> subseq l2 l3 -> subseq l1 l3.
+Proof.
+  intros.  generalize dependent H. generalize dependent l1.
+  induction H0.
+  - intros. inversion H. apply nil_sub.
+  - intros. apply app1. apply IHsubseq. auto.
+  - intros. inversion H.
+    + apply app1. apply IHsubseq. auto.
+    + apply app2. apply IHsubseq. auto.
+Qed.  
 
