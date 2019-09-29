@@ -8,6 +8,8 @@ From Coq Require Import Nat.
 From Coq Require Import Arith.
 From Coq Require Import List.
 
+Module Logic.
+
 Lemma and_intro : forall (A B : Prop),
   A -> B -> and A B.
 Proof.
