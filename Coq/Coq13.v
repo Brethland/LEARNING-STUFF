@@ -155,3 +155,14 @@ Proof.
     + auto.
 Qed.
 
+
+Fixpoint re_not_empty {T} (re : @reg_exp T) : bool :=   
+  match re with   
+  | EmptySet => false
+  | EmptyStr => false
+  | Char x => true
+  | App re1 re2 => andb (re_not_empty re1) (re_not_empty re2)   
+  | Union re1 re2 => orb (re_not_empty re1) (re_not_empty re2)   
+  | Star re => re_not_empty re   
+  end.
+
