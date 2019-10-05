@@ -113,4 +113,183 @@ Proof.
       apply H1 in H''. auto.
 Qed.
 
+Inductive pal {X : Type} : list X -> Prop :=
+  | EmptyPal : pal []
+  | SinglePal : forall (a : X), pal [a]
+  | ConsPal : forall (a : X) (l : list X), pal l -> pal ([a] ++ l ++ [a]).
 
+Lemma silly : forall {X} (a : X) (l : list X), a :: l = [a] ++ l.
+Proof.
+  intros. simpl. auto.
+Qed.
+
+Lemma silly2 : forall {X} (a: X) (l1 l2: list X), 
+  l1 = l2 -> l1 ++ [a] = l2 ++ [a].
+Proof.
+  intros. rewrite <- H. simpl. auto.
+Qed.
+
+Lemma rev_app : forall {X} (l1 l2 : list X), rev (l1 ++ l2) = rev l2 ++ rev l1.
+Proof.
+  intros. generalize dependent l2.
+  induction l1.
+  - intros. simpl. rewrite app_nil_r. auto.
+  - intros. simpl. rewrite app_assoc. apply silly2. auto.
+Qed.
+
+Lemma rev_single : forall {X} (a : X) (l : list X), l = rev l -> a :: l = rev(l ++ [a]).
+Proof.
+  intros. induction l.
+  - simpl. auto.
+  - rewrite rev_app. rewrite <- H. simpl. auto.
+Qed.
+
+Lemma pal_app_rev : forall {X} (l : list X), pal (l ++ rev l).
+Proof.
+  intros.
+  induction l.
+  - simpl. apply EmptyPal.
+  - simpl. rewrite silly. rewrite (app_assoc l (rev l) [a]).
+    apply ConsPal. auto.
+Qed.
+
+Lemma pal_rev : forall {X} (l : list X), pal l -> l = rev l.
+Proof.
+  intros.
+  induction H.
+  - simpl. auto.
+  - simpl. auto.
+  - simpl. assert(H' : a :: l = rev (l ++ [a]) -> a :: l ++ [a] = rev (l ++ [a]) ++ [a]).
+    intros.  rewrite <- H0. auto.
+    apply H'. apply rev_single. auto.
+Qed.
+
+Inductive disjoint {X : Type} : list X -> list X -> Prop :=
+  | EmptyJoin : disjoint [] []
+  | ConsJoinL : forall (a : X) (l1 l2 : list X), disjoint l1 l2 -> ~(In a l2) -> disjoint (a :: l1) l2
+  | ConsJoinR : forall (a : X) (l1 l2 : list X), disjoint l1 l2 -> ~(In a l1) -> disjoint l1 (a :: l2).
+
+Inductive noDup {X : Type} : list X -> Prop :=
+  | EmptyDup : noDup []
+  | ConsDup : forall (a : X) (l : list X), noDup l -> ~(In a l) -> noDup (a :: l).
+
+Lemma not_in_cons : forall {X} (a a0 : X) (l : list X), ~In a (a0 :: l) -> a <> a0 /\ ~In a l.
+Proof.
+  intros. unfold not in H. split.
+  - unfold not. intros. induction l.
+    + simpl in H. destruct H. left. auto.
+    + apply H. simpl. left. auto.
+  - induction l.
+    + simpl. auto.
+    + simpl. unfold not. intros.
+      destruct H0.
+      ++ apply H. simpl. right. left. auto.
+      ++ apply H. simpl. right. right. auto.
+Qed.
+
+Lemma disjoint_cons : forall {X} (a : X) (l1 l2 : list X), disjoint (a :: l1) l2 -> disjoint l1 l2.
+Proof.
+  intros.
+  generalize dependent l1. induction l2.
+  - intros. inversion H. auto.
+  - intros. inversion H. auto.
+    inversion H3.
+    + apply ConsJoinR. apply IHl2. auto.
+      apply not_in_cons in H4. destruct H4. auto.
+    + rewrite H8. apply ConsJoinR. apply IHl2. auto.
+      apply not_in_cons in H4. destruct H4. auto.
+Qed.
+
+Lemma disjoint_cons' : forall {X} (a : X) (l1 l2 : list X), disjoint l1 (a :: l2) -> disjoint l1 l2.
+Proof.
+  intros.
+  generalize dependent l2. induction l1.
+  - intros. inversion H. auto.
+  - intros. inversion H. auto.
+    inversion H2.
+    + apply ConsJoinL. rewrite H7. apply IHl1. auto.
+      apply not_in_cons in H4. destruct H4. auto.
+    + apply ConsJoinL. apply IHl1. auto. 
+      apply not_in_cons in H4. destruct H4. auto.
+    + auto.
+Qed.
+
+Lemma disjoint_not : forall {X} (a : X) (l1 l2 : list X), disjoint (a :: l1) l2 -> ~In a l2.
+Proof.
+  intros.
+  generalize dependent l1. induction l2.
+  - intros. simpl. auto.
+  - intros. simpl. unfold not. intros.
+    destruct H0. 
+    + rewrite H0 in H. inversion H. simpl in H5. apply H5. left. auto.
+      simpl in H5. apply H5. left. auto.
+    + unfold not in IHl2. apply IHl2 with (l1:=l1).
+      ++ apply disjoint_cons' in H. auto.
+      ++ auto.
+Qed. 
+
+Lemma In_app_iff : forall X l1 l2 (x : X),
+  In x (l1 ++ l2) <-> In x l1 \/ In x l2.
+Proof.
+  intros.
+  split.
+  induction l1.
+  - intros. simpl in H. right. auto.
+  - simpl. intros [HA | HB].
+    + left. left. auto.
+    + apply IHl1 in HB.
+      destruct HB.
+      ++ left. right. auto.
+      ++ right. auto.
+  - apply in_or_app.
+Qed.
+
+Lemma noDup_app : forall {X} (l1 l2 : list X), noDup l1 -> noDup l2 -> disjoint l1 l2 -> noDup (l1 ++ l2).
+Proof.
+  intros.
+  generalize dependent l2.
+  induction l1.
+  - intros. simpl. auto.
+  - intros. simpl. apply ConsDup. apply IHl1.
+    + inversion H. auto.
+    + auto.
+    + apply disjoint_cons in H1. auto.
+    + unfold not. intros. apply In_app_iff in H2. destruct H2.
+      ++ inversion H. apply H6 in H2. auto.
+      ++ apply disjoint_not in H1. apply H1 in H2. auto.
+Qed.
+
+Lemma so_silly : forall {X} (a : X) (l1 l2 : list X), l1 = l2 -> a :: l1 = a :: l2.
+Proof.
+  intros. rewrite H. auto.
+Qed.
+
+Lemma in_split : ∀ (X:Type) (x:X) (l:list X), In x l → ∃ l1 l2, l = l1 ++ x :: l2.
+Proof.
+  intros.
+  induction l.
+  - inversion H.
+  - simpl in H. destruct H.
+    + rewrite H. exists [], l. auto.
+    + apply IHl in H. destruct H as [l1 [l2 HA]].
+      exists (a :: l1), l2.
+      simpl. apply so_silly. auto.
+Qed.
+
+Inductive repeats {X:Type} : list X -> Prop :=
+  | repeat_join : forall l1 l2, (exists x, In x l1 /\ In x l2) -> repeats (l1 ++ l2).
+
+Definition excluded_middle := forall (P : Prop), P \/ (~ P).
+
+Theorem pigeonhole_principle: ∀ (X:Type) (l1 l2:list X),   
+  excluded_middle → 
+   (∀ x, In x l1 → In x l2) → 
+  length l2 < length l1 → repeats l1.
+Proof.
+  intros X l1. induction l1 as [|x l1' IHl1']. 
+  - intros. inversion H1.
+  - intros. rewrite silly. apply repeat_join.
+    exists x. split. simpl. left. auto.
+    simpl in H0. Abort.
+ 
+(* Leaving filter_challenge2 palidome_converse pigeonhole_principle *)

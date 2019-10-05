@@ -394,4 +394,235 @@ Proof.
       intros. rewrite <- (app_assoc s1 x1 (napp m x2 ++ x3)). apply MStarApp. auto. auto.
 Qed.
 
+Require Export Coq.Strings.Ascii. 
+Definition string := list ascii.
 
+Lemma provable_equiv_true : ∀ (P : Prop), P → (P ↔ True). 
+Proof.   
+  intros. split.   
+  - intros. constructor.   
+  - intros _. apply H. 
+Qed.
+
+Lemma not_equiv_false : ∀ (P : Prop), ¬P → (P ↔ False). 
+Proof.   
+  intros.   split.   
+  - apply H. 
+  - intros. inversion H0. 
+Qed.
+
+Lemma null_matches_none : ∀ (s : string), (s =~ EmptySet) ↔ False. 
+Proof. 
+  intros. apply not_equiv_false. unfold not. intros. inversion H. 
+Qed.
+
+Lemma empty_matches_eps : ∀ (s : string), s =~ EmptyStr ↔ s = [ ].
+Proof.   
+  split.   
+  - intros. inversion H. reflexivity.   
+  - intros. rewrite H. apply MEmpty. 
+Qed.
+
+Lemma empty_nomatch_ne : ∀ (a : ascii) s, (a :: s =~ EmptyStr) ↔ False. 
+Proof. 
+  intros. 
+  apply not_equiv_false. 
+  unfold not. intros. inversion H. 
+Qed.
+
+Lemma char_nomatch_char : ∀ (a b : ascii) s, b ≠ a → (b :: s =~ Char a ↔ False). 
+Proof.   
+  intros. apply not_equiv_false. unfold not. 
+  intros. apply H. inversion H0. reflexivity. 
+Qed. 
+
+Lemma char_eps_suffix : ∀ (a : ascii) s, a :: s =~ Char a ↔ s = [ ]. 
+Proof.   split.   - intros. inversion H. reflexivity.   - intros. rewrite H. apply MChar. Qed.
+
+Lemma app_exists : ∀ (s : string) re0 re1, 
+    s =~ App re0 re1 ↔  ∃ s0 s1, s = s0 ++ s1 ∧ s0 =~ re0 ∧ s1 =~ re1. 
+Proof.
+  intros. 
+  split.   
+  - intros. inversion H. exists s1, s2. split.     
+      * reflexivity. 
+      * split. apply H3. apply H4.   
+  - intros [ s0 [ s1 [ Happ [ Hmat0 Hmat1 ] ] ] ]. 
+    rewrite Happ. apply (MApp s0 _ s1 _ Hmat0 Hmat1). 
+Qed.
+
+Lemma app_ne : ∀ (a : ascii) s re0 re1, 
+  a :: s =~ (App re0 re1) ↔ ([ ] =~ re0 ∧ a :: s =~ re1) ∨ 
+  ∃ s0 s1, s = s0 ++ s1 ∧ a :: s0 =~ re0 ∧ s1 =~ re1. 
+Proof.
+  intros.
+  split.
+  - intros. apply app_exists in H.
+    destruct H as [x1 [x2 [HA [HB HC]]]].
+    destruct x1.
+    + left. split. auto. simpl in HA. rewrite HA. auto.
+    + right. inversion HA. exists x1,x2. split. auto. split. auto. auto.
+  - intros. destruct H as [[H1 H2]|[x1 [x2 [H1 [H2 H3]]]]].
+    + rewrite <- (app_nil_l (a :: s)). apply MApp.
+      auto. auto.
+    + rewrite H1. assert (H' : a :: x1 ++ x2 = (a :: x1) ++ x2). simpl. auto.
+      rewrite H'. apply MApp. auto. auto.
+Qed.
+
+Lemma union_disj : ∀ (s : string) re0 re1, 
+  s =~ Union re0 re1 ↔ s =~ re0 ∨ s =~ re1. 
+Proof. 
+  intros. split. 
+  - intros. inversion H. 
+    + left. apply H2.
+    + right. apply H2.
+  - intros [ H | H ]. 
+    + apply MUnionL. apply H. 
+    + apply MUnionR. apply H. 
+Qed.
+
+Lemma star_ne : ∀ (a : ascii) s re, 
+  a :: s =~ Star re ↔ ∃ s0 s1, s = s0 ++ s1 ∧ a :: s0 =~ re ∧ s1 =~ Star re. 
+Proof.
+  intros. split.
+  - intros. remember (Star re) as re'. remember (a :: s) as s1.
+    induction H.
+    + inversion Heqre'.
+    + inversion Heqre'.
+    + inversion Heqre'.
+    + inversion Heqre'.
+    + inversion Heqre'.
+    + inversion Heqs1.
+    + destruct s1.
+      ++ apply IHexp_match2. auto. auto.
+      ++ inversion Heqs1.
+         exists s1, s2. split. auto. split. inversion Heqre'.
+         rewrite H4, H2 in H. auto. auto.
+  - intros. destruct H as [x1 [x2 [HA [HB HC]]]].
+    rewrite HA. assert (H' : a :: x1 ++ x2 = (a :: x1) ++ x2). simpl. auto.
+    rewrite H'. apply MStarApp. auto. auto.
+Qed.
+
+Inductive reflect (P : Prop) : bool → Prop := 
+  | ReflectT : P → reflect P true 
+  | ReflectF : ¬ P → reflect P false.
+
+Theorem iff_reflect : ∀ P b, (P ↔ b = true) → reflect P b. 
+Proof. 
+  intros P b H. destruct b.   
+  - apply ReflectT. rewrite H. reflexivity.   
+  - apply ReflectF. rewrite H. intros H'. inversion H'. 
+Qed.
+
+Theorem reflect_iff : ∀ P b, reflect P b → (P ↔ b = true). 
+Proof.
+  intros. split.
+  - destruct H.
+    + auto.
+    + intros. unfold not in H. apply H in H0. inversion H0.
+  - destruct H.
+    + auto.
+    + intros. inversion H0.
+Qed.
+
+Definition refl_matches_eps m :=   ∀ re : @reg_exp ascii, reflect ([ ] =~ re) (m re). 
+Fixpoint match_eps (re: @reg_exp ascii) : bool :=
+  match re with
+  | EmptyStr => true
+  | EmptySet => false
+  | Char _ => false
+  | App re1 re2 => andb (match_eps re1) (match_eps re2)
+  | Union re1 re2 => orb (match_eps re1) (match_eps re2)
+  | Star re1 => true
+  end.
+
+Lemma andb_true_iff : ∀ b1 b2:bool, andb b1 b2 = true ↔ b1 = true ∧ b2 = true.
+Proof. 
+  intros. split.
+  - intros.
+    destruct b1. 
+    + simpl in H. auto.
+    + inversion H.
+  - intros [HA HB].
+    rewrite HA. rewrite HB. auto.
+Qed.
+
+Lemma orb_true_iff : ∀ b1 b2,  (b1 || b2)%bool = true ↔ b1 = true ∨ b2 = true.
+Proof.
+  intros.
+  split.
+  - intros.
+    destruct b1.
+    + left. auto.
+    + simpl in H. right. auto.
+  - intros [HA | HB].
+    + rewrite HA. auto.
+    + rewrite HB.
+      destruct b1. auto. auto.
+Qed. 
+
+Lemma match_eps_refl : refl_matches_eps match_eps. 
+Proof.
+  unfold refl_matches_eps. intros.
+  induction re.
+  - apply ReflectF. unfold not. intros. inversion H.
+  - apply ReflectT. apply MEmpty.
+  - apply ReflectF. unfold not. intros. inversion H.
+  - apply iff_reflect. simpl. rewrite andb_true_iff. 
+    apply reflect_iff in IHre1. apply reflect_iff in IHre2. split.
+    + intros. inversion H. 
+      assert(Hs1 : s1 = []). destruct s1. auto. inversion H0. 
+      rewrite Hs1 in H0. simpl in H0. rewrite H0 in H4;rewrite Hs1 in H3.
+      apply IHre1 in H3;apply IHre2 in H4. split. auto. auto.
+    + intros [HA HB]. apply IHre1 in HA;apply IHre2 in HB.
+      rewrite <- (app_nil_l []). apply MApp. auto. auto.
+  - apply iff_reflect. simpl. rewrite orb_true_iff.
+    apply reflect_iff in IHre1. apply reflect_iff in IHre2. split.
+    + intros. inversion H.
+      apply IHre1 in H2. left. auto.
+      apply IHre2 in H2. right. auto.
+    + intros. destruct H as [HA | HB].
+      apply IHre1 in HA. apply MUnionL. auto.
+      apply IHre2 in HB. apply MUnionR. auto.
+  - apply ReflectT. apply MStar0.
+Qed.
+
+Definition is_der re (a : ascii) re' :=   ∀ s, a :: s =~ re ↔ s =~ re'.
+
+Definition derives d := ∀ a re, is_der re a (d a re). 
+
+Definition beq_ascii x y :=
+  if ascii_dec x y then true else false.
+
+Fixpoint derive (a : ascii) (re : @reg_exp ascii) : @reg_exp ascii :=
+  match re with
+  | EmptySet => EmptySet
+  | EmptyStr => EmptySet
+  | Char b => if beq_ascii b a then EmptyStr else EmptySet
+  | Union r1 r2 => Union (derive a r1) (derive a r2)
+  | App r1 r2 => if (match_eps r1) then Union (derive a r2) (App (derive a r1) r2)
+                 else App (derive a r1) r2
+  | Star r => App (derive a r) (Star r)
+  end.
+
+Definition matches_regex m : Prop :=   ∀ (s : string) re, reflect (s =~ re) (m s re).
+
+Fixpoint regex_match (s : string) (re : @reg_exp ascii) : bool :=
+  match s with
+  | [] => match_eps re
+  | h::t => regex_match t (derive h re)
+  end.
+
+Lemma derive_corr : derives derive. Admitted. (* to be finished. *)
+
+Theorem regex_refl : matches_regex regex_match. 
+Proof.
+  unfold matches_regex. intros. generalize dependent re.
+  induction s.
+  - simpl. apply match_eps_refl.
+  - intros. apply iff_reflect. split.
+    + intros. simpl. apply derive_corr in H. specialize (IHs (derive a re)).
+      apply reflect_iff in IHs. apply IHs. auto.
+    + intros. simpl. apply derive_corr. specialize (IHs (derive a re)).
+      apply reflect_iff in IHs. apply IHs. auto.
+Qed.
