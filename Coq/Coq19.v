@@ -450,3 +450,189 @@ Proof.
     apply IHE1_2. assumption.
 Qed.
 
+Definition plus2 : com :=
+  X ::= X + 2.
+Definition XtimesYinZ : com :=
+  Z ::= X * Y.
+Definition subtract_slowly_body : com :=
+  Z ::= Z - 1 ;;
+  X ::= X - 1.
+
+Definition subtract_slowly : com :=
+  (WHILE ~(X = 0) DO
+    subtract_slowly_body
+  END)%imp.
+Definition subtract_3_from_5_slowly : com :=
+  X ::= 3 ;;
+  Z ::= 5 ;;
+  subtract_slowly.
+
+Definition loop : com :=
+  WHILE true DO
+    SKIP
+  END.
+
+Lemma t_update_eq : ∀(A : Type) (m : total_map A) x v,
+    (x !-> v ; m) x = v.
+Proof.
+  intros. unfold t_update. rewrite <- beq_string_refl.
+  auto.
+Qed.
+
+Theorem plus2_spec : ∀st n st',
+  st X = n →
+  st =[ plus2 ]⇒ st' →
+  st' X = n + 2.
+Proof.
+  intros st n st' HX Heval.
+  inversion Heval. subst. clear Heval. simpl.
+  apply t_update_eq. Qed.
+
+Lemma XtimesYinZ_spec : forall st n m st',
+  st X = n -> st Y = m -> st =[ XtimesYinZ ]⇒  st' ->
+    st' Z = n * m.
+Proof.
+  intros.
+  inversion H1. subst. simpl. apply t_update_eq.
+Qed.
+
+Theorem loop_never_stops : ∀st st',
+  ~(st =[ loop ]⇒ st').
+Proof.
+  intros st st' contra. unfold loop in contra.
+  remember (WHILE true DO SKIP END)%imp as loopdef
+           eqn:Heqloopdef.
+  induction contra;
+  try (subst; inversion Heqloopdef).
+  - subst. inversion H.
+  - subst. apply IHcontra2. assumption.
+Qed.
+
+Open Scope imp_scope.
+Fixpoint no_whiles (c : com) : bool :=
+  match c with
+  | SKIP =>
+      true
+  | _ ::= _ =>
+      true
+  | c1 ;; c2 =>
+      andb (no_whiles c1) (no_whiles c2)
+  | IFB _ THEN ct ELSE cf FI =>
+      andb (no_whiles ct) (no_whiles cf)
+  | WHILE _ DO _ END =>
+      false
+  end.
+Close Scope imp_scope.
+
+Inductive no_whilesR : com -> Prop :=
+  | sk_now : no_whilesR SKIP
+  | ass_now : forall X n, no_whilesR (X ::= n)
+  | seq_now : forall c1 c2, no_whilesR c1 -> no_whilesR c2
+                            -> no_whilesR (c1 ;; c2)
+  | if_now : forall c1 c2 b, no_whilesR c1 -> no_whilesR c2
+                            -> no_whilesR (IFB b THEN c1 ELSE c2 FI).
+
+Lemma andb_oj : forall a b , andb a b = true -> a = true /\ b = true.
+Proof.
+  intros. destruct a;destruct b;split;auto.
+Qed.
+ 
+Theorem no_whiles_eqv:
+   ∀c, no_whiles c = true ↔ no_whilesR c.
+Proof.
+  intros. split.
+  - intros. induction c;
+    try (constructor;simpl in H; apply andb_oj in H;
+    destruct H);
+    try (apply IHc1 in H;
+    apply H);
+    try (apply IHc2 in H0;
+    apply H0).
+    inversion H.
+  - intros. induction H;
+    try (constructor;simpl;subst;auto);
+    try (simpl;rewrite IHno_whilesR1;rewrite IHno_whilesR2;
+    auto).
+Qed.
+
+Lemma no_whiles_trminating : forall c st,
+  no_whilesR c -> exists st', st =[ c ]⇒ st'.
+Proof.
+  intros. generalize dependent st.
+  induction c;intros.
+  - exists st. constructor.
+  - exists (x !-> aeval st a; st).
+    apply E_Ass. auto.
+  - inversion H.
+    remember (IHc1 H2 st) as H'.
+    destruct H'.
+    remember (IHc2 H3 x) as H''.
+    destruct H''.
+    exists x0. apply E_Seq with x.
+    auto. auto.
+  - inversion H. subst.
+    remember (beval st b) as sb.
+    remember (IHc1 H2 st) as H'.
+    destruct H'.
+    remember (IHc2 H4 st) as H''.
+    destruct H''.
+    destruct sb.
+    + exists x. constructor. auto. auto.
+    + exists x0. apply E_IfFalse. auto. auto.
+  - inversion H.
+Qed.
+
+Inductive sinstr : Type := 
+  | SPush : nat → sinstr 
+  | SLoad : string → sinstr 
+  | SPlus : sinstr 
+  | SMinus : sinstr 
+  | SMult : sinstr.
+
+Fixpoint s_execute (st : state) (stack : list nat)
+  (prog : list sinstr) : list nat :=
+  match prog with
+  | [] => stack
+  | p :: ps => match p with
+                | SPush n => s_execute st (n :: stack) ps
+                | SLoad s => s_execute st ((st s) :: stack) ps
+                | SPlus => s_execute st (((hd 0 stack) + (hd 0 (tl stack)))
+                                         :: (tl (tl stack))) ps
+                | SMinus => s_execute st (((hd 0 (tl stack)) - (hd 0 stack))
+                                         :: (tl (tl stack))) ps
+                | SMult => s_execute st (((hd 1 (tl stack)) * (hd 1 stack))
+                                         :: (tl (tl stack))) ps
+                end
+  end.
+
+Example s_execute1 : s_execute empty_st [] 
+  [SPush 5; SPush 3; SPush 1; SMinus] = [2; 5].
+Proof. simpl. auto. Qed.
+
+Example s_execute2 : s_execute ( X !-> 3 ) [3;4]
+  [SPush 4; SLoad X; SMult; SPlus] = [15; 4].
+Proof. simpl. auto. Qed.
+
+Fixpoint s_compile (e : aexp) : list sinstr :=
+  match e with
+  | AId s => [ SLoad s ]
+  | ANum n => [ SPush n ] 
+  | APlus a1 a2 => s_compile a1 ++ s_compile a2 ++ [ SPlus ]
+  | AMinus a1 a2 => s_compile a1 ++ s_compile a2 ++ [ SMinus ]
+  | AMult a1 a2 => s_compile a1 ++ s_compile a2 ++ [ SMult ]
+  end.
+
+Example s_compile1 : s_compile (X - (2 * Y)) 
+  = [SLoad X; SPush 2; SLoad Y; SMult; SMinus]. 
+Proof. simpl. auto. Qed.
+
+Theorem s_compile_correct : ∀ (st : state) (e : aexp), 
+  s_execute st [] (s_compile e) = [ aeval st e ].
+Proof.
+  intros. generalize dependent st.
+  induction e;intros;try reflexivity.
+  - simpl. 
+
+
+  
+
