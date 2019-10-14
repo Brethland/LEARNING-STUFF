@@ -786,7 +786,7 @@ Proof.
   - subst. exists st. auto.
 Qed.
 
-Theorem ceval_deterministic: ∀(c:com) st st1 st2 s1 s2,
+(* Theorem ceval_deterministic_failed: ∀(c:com) st st1 st2 s1 s2,
      st =[ c ]⇒ st1 / s1 →
      st =[ c ]⇒ st2 / s2 →
      st1 = st2 ∧ s1 = s2.
@@ -816,7 +816,7 @@ Proof.
       ++ subst. rewrite H6 in H9. inversion H9.
       ++ subst. rewrite H6 in H9. inversion H9.
       ++ subst. rewrite H3 in H14. inversion H14.
-      ++ subst. Abort.
+      ++ subst. Admitted. *)
 
 Theorem ceval_deterministic: ∀(c:com) st st1 st2 s1 s2,
      st =[ c ]⇒ st1 / s1 →
