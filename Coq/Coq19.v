@@ -304,6 +304,7 @@ Inductive com : Type :=
   | CSkip
   | CAss (x : string) (a : aexp)
   | CSeq (c1 c2 : com)
+(*   | CFor (c1 c2 c3 : com) (b : bexp) *)
   | CIf (b : bexp) (c1 c2 : com)
   | CWhile (b : bexp) (c : com).
 
@@ -318,6 +319,8 @@ Notation "'WHILE' b 'DO' c 'END'" :=
   (CWhile b c) (at level 80, right associativity) : imp_scope.
 Notation "'IFB' c1 'THEN' c2 'ELSE' c3 'FI'" :=
   (CIf c1 c2 c3) (at level 80, right associativity) : imp_scope.
+(* Notation "'FOR' c1 ';;;' b ';;;' c2 'DO' c3 'FI'" :=
+  (CFor c1 c2 c3 b) (at level 80, right associativity) : imp_scope. *)
 
 Open Scope imp_scope.
 Fixpoint ceval_fun_no_while (st : state) (c : com)
@@ -336,11 +339,14 @@ Fixpoint ceval_fun_no_while (st : state) (c : com)
           else ceval_fun_no_while st c2
     | WHILE b DO c END =>
         st (* bogus *)
+(*    |  FOR c1 ;;; b ;;; c2 DO c3 FI =>
+       st *)
   end.
 Close Scope imp_scope.
 
 Reserved Notation "st '=[' c ']⇒' st'"
                   (at level 40).
+
 Inductive ceval : com → state → state → Prop :=
   | E_Skip : ∀st,
       st =[ SKIP ]⇒ st
@@ -367,6 +373,16 @@ Inductive ceval : com → state → state → Prop :=
       st =[ c ]⇒ st' →
       st' =[ WHILE b DO c END ]⇒ st'' →
       st =[ WHILE b DO c END ]⇒ st''
+(*   | E_ForFalse : forall b st st' c1 c2 c3,
+      st =[ c1 ]⇒ st' ->
+      beval st b = false ->
+      st =[ FOR c1 ;;; b ;;; c2 DO c3 FI]⇒ st'
+  | E_ForTrue : forall st st' st'' st0 c1 c2 c3 b,
+      st =[ c1 ]⇒ st' ->
+      beval st b = true ->
+      st' =[ c3;;c2 ]⇒ st'' ->
+      st'' =[ FOR c1 ;;; b ;;; c2 DO c3 FI]⇒ st0 ->
+      st =[ FOR c1 ;;; b ;;; c2 DO c3 FI]⇒ st0 *)
 
   where "st =[ c ]⇒ st'" := (ceval c st st').
 
@@ -596,12 +612,18 @@ Fixpoint s_execute (st : state) (stack : list nat)
   | p :: ps => match p with
                 | SPush n => s_execute st (n :: stack) ps
                 | SLoad s => s_execute st ((st s) :: stack) ps
-                | SPlus => s_execute st (((hd 0 stack) + (hd 0 (tl stack)))
-                                         :: (tl (tl stack))) ps
-                | SMinus => s_execute st (((hd 0 (tl stack)) - (hd 0 stack))
-                                         :: (tl (tl stack))) ps
-                | SMult => s_execute st (((hd 1 (tl stack)) * (hd 1 stack))
-                                         :: (tl (tl stack))) ps
+                | SPlus => match stack with
+                            | n :: (m :: ss) => s_execute st ((n + m) :: ss) ps
+                            | _ => s_execute st stack ps
+                            end
+                | SMinus => match stack with
+                            | n :: (m :: ss) => s_execute st ((m - n) :: ss) ps
+                            | _ => s_execute st stack ps
+                            end
+                | SMult => match stack with
+                            | n :: (m :: ss) => s_execute st ((n * m) :: ss) ps
+                            | _ => s_execute st stack ps
+                            end
                 end
   end.
 
@@ -626,13 +648,218 @@ Example s_compile1 : s_compile (X - (2 * Y))
   = [SLoad X; SPush 2; SLoad Y; SMult; SMinus]. 
 Proof. simpl. auto. Qed.
 
-Theorem s_compile_correct : ∀ (st : state) (e : aexp), 
+Theorem s_concat_app :
+  forall (st : state) (p1 p2 : list sinstr) (l : list nat),
+    s_execute st l (p1 ++ p2) = s_execute st (s_execute st l p1)  p2.
+Proof.
+  intros. generalize dependent l.
+  induction p1.
+  - simpl. auto.
+  - intros. simpl. destruct a;try apply IHp1.
+    + destruct l. apply IHp1.
+      destruct l. apply IHp1. apply IHp1.
+    + destruct l. apply IHp1.
+      destruct l. apply IHp1. apply IHp1.
+    + destruct l. apply IHp1.
+      destruct l. apply IHp1. apply IHp1.
+Qed.
+
+Theorem s_compile_correct : forall (e : aexp) (st : state) (stack : list nat),
+   s_execute st stack (s_compile e) = aeval st e :: stack.
+  intros e st.
+  induction e;intros; try auto.
+  - simpl. repeat rewrite s_concat_app.
+    rewrite IHe2. rewrite IHe1. rewrite plus_comm. auto.
+  - simpl. repeat rewrite s_concat_app.
+    rewrite IHe2. rewrite IHe1. auto.
+  - simpl. repeat rewrite s_concat_app.
+    rewrite IHe2. rewrite IHe1. rewrite mult_comm. auto.
+Qed.
+
+Theorem s_compile_correct_nil : ∀ (st : state) (e : aexp), 
   s_execute st [] (s_compile e) = [ aeval st e ].
 Proof.
-  intros. generalize dependent st.
-  induction e;intros;try reflexivity.
-  - simpl. 
+  intros. apply s_compile_correct.
+Qed.
 
+Module BreakImp.
 
-  
+Inductive com : Type :=
+  | CSkip
+  | CBreak
+  | CAss (x : string) (a : aexp)
+  | CSeq (c1 c2 : com)
+  | CIf (b : bexp) (c1 c2 : com)
+  | CWhile (b : bexp) (c : com).
+
+Notation "'SKIP'" :=
+  CSkip.
+Notation "'BREAK'" :=
+  CBreak.
+Notation "x '::=' a" :=
+  (CAss x a) (at level 60).
+Notation "c1 ;; c2" :=
+  (CSeq c1 c2) (at level 80, right associativity).
+Notation "'WHILE' b 'DO' c 'END'" :=
+  (CWhile b c) (at level 80, right associativity).
+Notation "'IFB' c1 'THEN' c2 'ELSE' c3 'FI'" :=
+  (CIf c1 c2 c3) (at level 80, right associativity).
+
+Inductive result : Type :=
+  | SContinue
+  | SBreak.
+
+Reserved Notation "st '=[' c ']⇒' st' '/' s"
+         (at level 40, st' at next level).
+
+Inductive ceval : com → state → result → state → Prop :=
+  | E_Skip : ∀st,
+      st =[ SKIP ]⇒ st / SContinue
+  | E_Break : forall st,
+      st =[ BREAK ]⇒ st / SBreak
+  | E_Ass : forall st a1 n x,
+      aeval st a1 = n ->
+      st =[ x ::= a1 ]⇒ (x !-> n; st) / SContinue
+  | E_Seq_Break : forall c1 c2 st st',
+      st =[ c1 ]⇒ st' / SBreak ->
+      st =[ c1;;c2 ]⇒ st' / SBreak
+  | E_Seq_Continue : forall c1 c2 st st' st'' s,
+      st =[ c1 ]⇒ st' / SContinue ->
+      st =[ c2 ]⇒ st'' / s ->
+      st =[ c1;;c2 ]⇒ st'' / s
+  | E_IfTrue : ∀st st' b c1 c2 s,
+      beval st b = true →
+      st =[ c1 ]⇒ st' / s →
+      st =[ IFB b THEN c1 ELSE c2 FI ]⇒ st' / s
+  | E_IfFalse : ∀st st' b c1 c2 s,
+      beval st b = false →
+      st =[ c2 ]⇒ st' / s →
+      st =[ IFB b THEN c1 ELSE c2 FI ]⇒ st' / s
+  | E_WhileFalse : ∀b st c,
+      beval st b = false →
+      st =[ WHILE b DO c END ]⇒ st / SContinue
+  | E_WhileTrue : ∀st st' st'' b c,
+      beval st b = true →
+      st =[ c ]⇒ st' / SContinue →
+      st' =[ WHILE b DO c END ]⇒ st'' / SContinue →
+      st =[ WHILE b DO c END ]⇒ st'' / SContinue
+  | E_WhileTrue_Break : forall st st' b c,
+      beval st b = true ->
+      st =[ c ]⇒ st' / SBreak ->
+      st =[ WHILE b DO c END ]⇒ st' / SContinue
+
+  where "st '=[' c ']⇒' st' '/' s" := (ceval c st s st').
+
+Theorem break_ignore : ∀c st st' s,
+     st =[ BREAK ;; c ]⇒ st' / s →
+     st = st'.
+Proof.
+  intros. inversion H.
+  - subst. inversion H5. subst. auto.
+  - subst. inversion H2.
+Qed.
+
+Theorem while_continue : ∀b c st st' s,
+  st =[ WHILE b DO c END ]⇒ st' / s →
+  s = SContinue.
+Proof.
+  intros. inversion H;try (subst;auto).
+Qed.
+
+Theorem while_stops_on_break : ∀b c st st',
+  beval st b = true →
+  st =[ c ]⇒ st' / SBreak →
+  st =[ WHILE b DO c END ]⇒ st' / SContinue.
+Proof.
+  intros. constructor. auto. auto.
+Qed.
+
+Theorem while_break_true : ∀b c st st',
+  st =[ WHILE b DO c END ]⇒ st' / SContinue →
+  beval st' b = true →
+  ∃st'', st'' =[ c ]⇒ st' / SBreak.
+Proof.
+  intros. remember (WHILE b DO c END) as loop.
+  induction H;inversion Heqloop.
+  - subst. rewrite H in H0. inversion H0.
+  - subst. apply IHceval2. auto. auto.
+  - subst. exists st. auto.
+Qed.
+
+Theorem ceval_deterministic: ∀(c:com) st st1 st2 s1 s2,
+     st =[ c ]⇒ st1 / s1 →
+     st =[ c ]⇒ st2 / s2 →
+     st1 = st2 ∧ s1 = s2.
+Proof.
+  induction c;intros.
+  - inversion H; inversion H0. subst. auto.
+  - inversion H; inversion H0. subst. auto.
+  - inversion H; inversion H0. subst. auto.
+  - inversion H; inversion H0.
+    + specialize (IHc1 st st1 st2 SBreak SBreak). apply IHc1.
+      auto. auto.
+    + specialize (IHc1 st st1 st'0 SBreak SContinue H6 H9).
+      destruct IHc1. inversion H15.
+    + specialize (IHc1 st st' st2 SContinue SBreak H3 H13).
+      destruct IHc1. inversion H15.
+    + apply (IHc2 _ _ _ _ _ H7 H14).
+  - inversion H; inversion H0.
+    + subst. specialize (IHc1 st st1 st2 s1 s2).
+      apply IHc1. auto. auto.
+    + subst. rewrite H15 in H7. inversion H7.
+    + subst. rewrite H15 in H7. inversion H7.
+    + subst. specialize (IHc2 st st1 st2 s1 s2).
+      apply IHc2. auto. auto.
+  - remember (beval st b) as Heb. destruct Heb.
+    + inversion H; inversion H0.
+      ++ subst. rewrite <- HeqHeb in H12. inversion H12.
+      ++ subst. rewrite H6 in H9. inversion H9.
+      ++ subst. rewrite H6 in H9. inversion H9.
+      ++ subst. rewrite H3 in H14. inversion H14.
+      ++ subst. Abort.
+
+Theorem ceval_deterministic: ∀(c:com) st st1 st2 s1 s2,
+     st =[ c ]⇒ st1 / s1 →
+     st =[ c ]⇒ st2 / s2 →
+     st1 = st2 ∧ s1 = s2.
+Proof.
+  intros.
+  generalize dependent st2.
+  generalize dependent s2.
+  induction H; intros.
+  - inversion H0. auto.
+  - inversion H0. auto.
+  - inversion H0. subst. auto.
+  - inversion H0. subst. apply (IHceval _ _ H6).
+    subst. specialize (IHceval _ _ H3). destruct IHceval. inversion H2.
+  - inversion H1;subst.
+    + specialize (IHceval1 _ _ H7). destruct IHceval1. inversion H3.
+    + apply IHceval2, H8.
+  - inversion H1.
+    + subst. apply IHceval. auto.
+    + subst. rewrite H in H8. inversion H8.
+  - inversion H1.
+    + subst. rewrite H in H8. inversion H8.
+    + subst. apply IHceval. auto.
+  - inversion H0.
+    + subst. auto.
+    + subst. rewrite H in H3. inversion H3.
+    + subst. rewrite H in H3. inversion H3.
+  - inversion H2;subst.
+    + rewrite H in H8. inversion H8.
+    + apply IHceval2. specialize (IHceval1 _ _ H6). destruct IHceval1. subst.
+      auto.
+    + specialize (IHceval1 _ _ H9). destruct IHceval1. inversion H4.
+  - inversion H1;subst.
+    + rewrite H in H7. inversion H7.
+    + specialize (IHceval _ _ H5). destruct IHceval. inversion H3.
+    + specialize (IHceval _ _ H8). intuition.
+  (* But Why, induction on c doesn't work? *)
+Qed.
+
+End BreakImp.
+
+Notation "'FOR' c1 ';' b ';' c2 'DO' c3 'END'" :=
+  (CSeq c1 (CWhile b (CSeq c3 c2))) (at level 80, right associativity) : imp_scope.
+
 

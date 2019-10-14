@@ -1,4 +1,5 @@
-Require Import Coq.Arith.Arith. 
+Require Import Coq.Arith.Arith.
+Require Import Omega.
 Require Import Unicode.Utf8.
 
 Inductive div : nat -> nat -> Prop :=
@@ -45,3 +46,8 @@ Proof.
   try (constructor;auto).
 Qed.
 
+Lemma Coprime_not_involutive : forall n, 1 <= n -> ~(Coprime n n).
+Proof.
+  intros. unfold not in *. induction n.
+  - inversion H.
+  - intros. 
