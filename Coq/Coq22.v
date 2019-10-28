@@ -235,4 +235,72 @@ Proof.
     rewrite <- H. rewrite t_update_same. apply E_Skip.
 Qed.
 
+Lemma sym_cequiv : forall (c1 c2 : com), cequiv c1 c2 -> cequiv c2 c1. 
+Proof.
+  intros c1 c2 H st st'.
+  symmetry. apply H.
+Qed.
+
+Lemma trans_cequiv : forall (c1 c2 c3 : com), cequiv c1 c2 -> cequiv c2 c3 -> cequiv c1 c3.
+Proof.
+  unfold cequiv;intros c1 c2 c3 H1 H2 st st'. 
+  apply iff_trans with (st =[ c2]⇒ st'). auto. auto.
+Qed.
+
+Theorem CAss_congruence : ∀x a1 a1',
+  aequiv a1 a1' →
+  cequiv (CAss x a1) (CAss x a1').
+Proof.
+  intros. split.
+  - intros. inversion H0;subst. apply E_Ass.
+    rewrite H. auto.
+  - intros. inversion H0;subst. apply E_Ass.
+    rewrite H. auto.
+Qed.
+
+Theorem CWhile_congruence : ∀b1 b1' c1 c1',
+  bequiv b1 b1' → cequiv c1 c1' →
+  cequiv (WHILE b1 DO c1 END) (WHILE b1' DO c1' END).
+Proof.
+  intros. split;intros.
+  - remember (WHILE b1 DO c1 END)%imp as cwhile eqn: Heqw.
+    induction H1;inversion Heqw;subst.
+    + rewrite H in H1. apply E_WhileFalse. auto.
+    + apply E_WhileTrue with st'. rewrite H in H1. auto.
+      apply H0 in H1_. auto. auto.
+  - remember (WHILE b1' DO c1' END)%imp as cwhile eqn: Heqw.
+    induction H1;inversion Heqw;subst.
+    + rewrite <- H in H1. apply E_WhileFalse. auto.
+    + apply E_WhileTrue with st'. rewrite <- H in H1. auto.
+      apply H0 in H1_. auto. auto.
+Qed.
+
+Theorem CSeq_congruence : ∀c1 c1' c2 c2',
+  cequiv c1 c1' → cequiv c2 c2' →
+  cequiv (c1;;c2) (c1';;c2').
+Proof.
+  split;intros; inversion H1;subst;apply H in H4;apply H0 in H7;
+            apply E_Seq with st'0; auto; auto.
+Qed.
+
+Theorem CIf_congruence : ∀b b' c1 c1' c2 c2',
+  bequiv b b' → cequiv c1 c1' → cequiv c2 c2' →
+  cequiv (IFB b THEN c1 ELSE c2 FI)
+         (IFB b' THEN c1' ELSE c2' FI).
+Proof.
+  intros. split;intros.
+  - inversion H2;subst.
+    + apply E_IfTrue. rewrite H in H8. auto.
+      apply H0 in H9. auto.
+    + apply E_IfFalse. rewrite H in H8. auto.
+      apply H1 in H9. auto.
+  - inversion H2;subst.
+    + apply E_IfTrue. rewrite <- H in H8. auto.
+      apply H0 in H9. auto.
+    + apply E_IfFalse. rewrite <- H in H8. auto.
+      apply H1 in H9. auto.
+Qed.
+
+
+
 
