@@ -301,6 +301,373 @@ Proof.
       apply H1 in H9. auto.
 Qed.
 
+Definition atrans_sound (atrans : aexp → aexp) : Prop :=
+  ∀(a : aexp),
+    aequiv a (atrans a).
+Definition btrans_sound (btrans : bexp → bexp) : Prop :=
+  ∀(b : bexp),
+    bequiv b (btrans b).
+Definition ctrans_sound (ctrans : com → com) : Prop :=
+  ∀(c : com),
+    cequiv c (ctrans c).
+
+Fixpoint fold_constants_aexp (a : aexp) : aexp :=
+  match a with
+  | ANum n => ANum n
+  | AId x => AId x
+  | APlus a1 a2 =>
+    match (fold_constants_aexp a1,
+           fold_constants_aexp a2)
+    with
+    | (ANum n1, ANum n2) => ANum (n1 + n2)
+    | (a1', a2') => APlus a1' a2'
+    end
+  | AMinus a1 a2 =>
+    match (fold_constants_aexp a1,
+           fold_constants_aexp a2)
+    with
+    | (ANum n1, ANum n2) => ANum (n1 - n2)
+    | (a1', a2') => AMinus a1' a2'
+    end
+  | AMult a1 a2 =>
+    match (fold_constants_aexp a1,
+           fold_constants_aexp a2)
+    with
+    | (ANum n1, ANum n2) => ANum (n1 * n2)
+    | (a1', a2') => AMult a1' a2'
+    end
+  end.
+
+Fixpoint fold_constants_bexp (b : bexp) : bexp :=
+  match b with
+  | BTrue => BTrue
+  | BFalse => BFalse
+  | BEq a1 a2 =>
+      match (fold_constants_aexp a1,
+             fold_constants_aexp a2) with
+      | (ANum n1, ANum n2) =>
+          if n1 =? n2 then BTrue else BFalse
+      | (a1', a2') =>
+          BEq a1' a2'
+      end
+  | BLe a1 a2 =>
+      match (fold_constants_aexp a1,
+             fold_constants_aexp a2) with
+      | (ANum n1, ANum n2) =>
+          if n1 <=? n2 then BTrue else BFalse
+      | (a1', a2') =>
+          BLe a1' a2'
+      end
+  | BNot b1 =>
+      match (fold_constants_bexp b1) with
+      | BTrue => BFalse
+      | BFalse => BTrue
+      | b1' => BNot b1'
+      end
+  | BAnd b1 b2 =>
+      match (fold_constants_bexp b1,
+             fold_constants_bexp b2) with
+      | (BTrue, BTrue) => BTrue
+      | (BTrue, BFalse) => BFalse
+      | (BFalse, BTrue) => BFalse
+      | (BFalse, BFalse) => BFalse
+      | (b1', b2') => BAnd b1' b2'
+      end
+  end.
+
+Open Scope imp.
+Fixpoint fold_constants_com (c : com) : com :=
+  match c with
+  | SKIP =>
+      SKIP
+  | x ::= a =>
+      x ::= (fold_constants_aexp a)
+  | c1 ;; c2 =>
+      (fold_constants_com c1) ;; (fold_constants_com c2)
+  | IFB b THEN c1 ELSE c2 FI =>
+      match fold_constants_bexp b with
+      | BTrue => fold_constants_com c1
+      | BFalse => fold_constants_com c2
+      | b' => IFB b' THEN fold_constants_com c1
+                     ELSE fold_constants_com c2 FI
+      end
+  | WHILE b DO c END =>
+      match fold_constants_bexp b with
+      | BTrue => WHILE BTrue DO SKIP END
+      | BFalse => SKIP
+      | b' => WHILE b' DO (fold_constants_com c) END
+      end
+  end.
+Close Scope imp.
+
+Theorem fold_constants_aexp_sound :
+  atrans_sound fold_constants_aexp.
+Proof.
+  unfold atrans_sound. intros. unfold aequiv. intros.
+  induction a;simpl;try reflexivity;
+  try (destruct (fold_constants_aexp a1);
+       destruct (fold_constants_aexp a2);
+       rewrite IHa1; rewrite IHa2; reflexivity).
+Qed.
+
+Lemma fold_constants_bexp_sound :
+  btrans_sound fold_constants_bexp.
+Proof.
+  unfold btrans_sound. intros. unfold bequiv. intros.
+  induction b;auto.
+  - simpl.
+    remember (fold_constants_aexp a) as a1' eqn:Heqa1'.
+    remember (fold_constants_aexp a0) as a2' eqn:Heqa2'.
+    replace (aeval st a) with (aeval st a1') by
+       (subst a1'; rewrite <- fold_constants_aexp_sound; reflexivity).
+    replace (aeval st a0) with (aeval st a2') by
+       (subst a2'; rewrite <- fold_constants_aexp_sound; reflexivity).
+    destruct a1';destruct a2';try reflexivity.
+    simpl.  destruct (n =? n0);reflexivity.
+  - simpl.
+    remember (fold_constants_aexp a) as a1' eqn:Heqa1'.
+    remember (fold_constants_aexp a0) as a2' eqn:Heqa2'.
+    replace (aeval st a) with (aeval st a1') by
+       (subst a1'; rewrite <- fold_constants_aexp_sound; reflexivity).
+    replace (aeval st a0) with (aeval st a2') by
+        (subst a2'; rewrite <- fold_constants_aexp_sound; reflexivity).
+    destruct a1';try reflexivity.
+    destruct a2';try reflexivity.
+    simpl. destruct (n <=? n0);reflexivity.
+  - simpl. remember (fold_constants_bexp b) as b' eqn:Heqb'.
+    rewrite IHb.
+    destruct b'; reflexivity.
+  -  simpl.
+    remember (fold_constants_bexp b1) as b1' eqn:Heqb1'.
+    remember (fold_constants_bexp b2) as b2' eqn:Heqb2'.
+    rewrite IHb1. rewrite IHb2.
+    destruct b1'; destruct b2'; reflexivity.
+Qed.
+
+Lemma fold_constant_com_bound :
+  ctrans_sound fold_constants_com.
+Proof.
+  unfold ctrans_sound. intros. induction c;simpl.
+  - unfold cequiv. intros. split;intros;apply H.
+  - apply CAss_congruence. apply fold_constants_aexp_sound.
+  - apply CSeq_congruence. apply IHc1. apply IHc2.
+  - assert (bequiv b (fold_constants_bexp b)). {
+      apply fold_constants_bexp_sound. }
+    destruct (fold_constants_bexp b) eqn:Heqb;try (apply CIf_congruence; assumption).
+    + apply trans_cequiv with c1; try assumption. apply TEST_true. auto.
+    + apply trans_cequiv with c2; try assumption. apply TEST_false. auto.
+  - assert (bequiv b (fold_constants_bexp b)). {
+      apply fold_constants_bexp_sound. }
+    destruct (fold_constants_bexp b) eqn:Heqb; try (apply CWhile_congruence; assumption).
+    + apply WHILE_true. auto.
+    + apply WHILE_false. auto.
+Qed.
+
+Fixpoint optimize_0plus_aexp (e : aexp) : aexp :=
+  match e with
+  | ANum n => ANum n
+  | AId x => AId x
+  | APlus (ANum 0) e2 => optimize_0plus_aexp e2
+  | APlus e1 e2 =>
+    APlus (optimize_0plus_aexp e1) (optimize_0plus_aexp e2)
+  | AMinus e1 e2 =>
+    AMinus (optimize_0plus_aexp e1) (optimize_0plus_aexp e2)
+  | AMult e1 e2 =>
+    AMult (optimize_0plus_aexp e1) (optimize_0plus_aexp e2)
+  end.
+
+Fixpoint optimize_0plus_bexp (b : bexp) : bexp :=
+  match b with
+  | BTrue => BTrue
+  | BFalse => BFalse
+  | BEq a1 a2 => BEq (optimize_0plus_aexp a1) (optimize_0plus_aexp a2)
+  | BLe a1 a2 => BLe (optimize_0plus_aexp a1) (optimize_0plus_aexp a2)
+  | BNot b1 => BNot (optimize_0plus_bexp b1)
+  | BAnd b1 b2 => BAnd (optimize_0plus_bexp b1) (optimize_0plus_bexp b2)
+  end.
+
+Open Scope imp.
+Fixpoint optimize_0plus_com (c : com) : com :=
+  match c with
+  | SKIP => SKIP
+  | x ::= a => x ::= (optimize_0plus_aexp a)
+  | c1 ;; c2 => (optimize_0plus_com c1) ;; (optimize_0plus_com c2)
+  | IFB b THEN c1 ELSE c2 FI
+    =>IFB (optimize_0plus_bexp b) THEN
+          (optimize_0plus_com c1) ELSE (optimize_0plus_com c2) FI
+  | WHILE b DO c END
+    => WHILE (optimize_0plus_bexp b) DO (optimize_0plus_com c) END
+  end.
+Close Scope imp.
+
+Lemma plus_equiv : forall (a b : aexp) (st : state), aeval st a + aeval st b
+                                                       = aeval st (a + b).
+Proof.
+  intros. induction a;try reflexivity.  
+Qed.
+
+Lemma optimize_0plus_aexp_sound :
+  atrans_sound optimize_0plus_aexp.
+Proof.
+  unfold atrans_sound. unfold aequiv. intros.
+  induction a; simpl; try reflexivity;
+    try (destruct a1;rewrite IHa1;rewrite IHa2;reflexivity).
+  destruct a1.
+  - simpl. rewrite IHa2. auto.
+  - destruct n.
+    + simpl. rewrite IHa2. auto.
+    + rewrite IHa2. auto.
+  - rewrite IHa1. rewrite IHa2. apply (plus_equiv (optimize_0plus_aexp(a1_1 + a1_2)) (optimize_0plus_aexp(a2)) st).
+  - rewrite IHa1. rewrite IHa2. apply (plus_equiv (optimize_0plus_aexp(a1_1 - a1_2)) (optimize_0plus_aexp(a2)) st).
+  - rewrite IHa1. rewrite IHa2. apply (plus_equiv (optimize_0plus_aexp(a1_1 * a1_2)) (optimize_0plus_aexp(a2)) st).
+Qed.
+
+Lemma optimize_0plus_bexp_sound :
+  btrans_sound optimize_0plus_bexp.
+Proof.
+  unfold btrans_sound. unfold bequiv. intros.
+  induction b;simpl;try reflexivity;
+  try (rewrite optimize_0plus_aexp_sound;
+    rewrite (optimize_0plus_aexp_sound a0);
+    auto);try (rewrite IHb;auto);
+    try(rewrite IHb1;rewrite IHb2;auto).
+Qed.
+
+Lemma optimize_0plus_com_sound :
+  ctrans_sound optimize_0plus_com.
+Proof.
+  unfold ctrans_sound. induction c;simpl;unfold cequiv.
+  - intros. split;auto.
+  - apply CAss_congruence. apply optimize_0plus_aexp_sound.
+  - apply CSeq_congruence. apply IHc1. apply IHc2.
+  - apply CIf_congruence. apply optimize_0plus_bexp_sound. apply IHc1. apply IHc2.
+  - apply CWhile_congruence. apply optimize_0plus_bexp_sound. apply IHc.
+Qed.
+
+Definition optimizer (c : com) := optimize_0plus_com (fold_constants_com c).
+
+Lemma optimizer_sound : ctrans_sound optimizer.
+Proof.
+  unfold ctrans_sound. unfold cequiv. unfold optimizer.
+  intros. split.
+  - intros;apply (optimize_0plus_com_sound (fold_constants_com c)).
+    apply (fold_constant_com_bound c);auto.
+  - intros;apply (optimize_0plus_com_sound (fold_constants_com c)) in H.
+    apply fold_constant_com_bound in H. auto.
+Qed.
+
+Fixpoint subst_aexp (x : string) (u : aexp) (a : aexp) : aexp :=
+  match a with
+  | ANum n =>
+      ANum n
+  | AId x' =>
+      if beq_string x x' then u else AId x'
+  | APlus a1 a2 =>
+      APlus (subst_aexp x u a1) (subst_aexp x u a2)
+  | AMinus a1 a2 =>
+      AMinus (subst_aexp x u a1) (subst_aexp x u a2)
+  | AMult a1 a2 =>
+      AMult (subst_aexp x u a1) (subst_aexp x u a2)
+  end.
 
 
+Definition subst_equiv_property := ∀x1 x2 a1 a2,
+  cequiv (x1 ::= a1;; x2 ::= a2)
+         (x1 ::= a1;; x2 ::= subst_aexp x1 a1 a2).
 
+Theorem subst_inequiv :
+  ¬subst_equiv_property.
+Proof.
+  unfold subst_equiv_property.
+  intros Contra.
+  remember (X ::= X + 1;;
+            Y ::= X)%imp
+      as c1.
+  remember (X ::= X + 1;;
+            Y ::= X + 1)%imp
+      as c2.
+  assert (cequiv c1 c2) by (subst; apply Contra).
+  remember (Y !-> 1 ; X !-> 1) as st1.
+  remember (Y !-> 2 ; X !-> 1) as st2.
+  assert (H1 : empty_st =[ c1 ]⇒ st1);
+  assert (H2 : empty_st =[ c2 ]⇒ st2);
+  try (subst;
+       apply E_Seq with (st' := (X !-> 1));
+       apply E_Ass; reflexivity).
+  apply H in H1.
+  assert (Hcontra : st1 = st2)
+    by (apply (ceval_deterministic c2 empty_st); assumption).
+  assert (Hcontra' : st1 Y = st2 Y)
+    by (rewrite Hcontra; reflexivity).
+  subst. inversion Hcontra'. Qed.
+
+Inductive var_not_used_in_aexp (x : string) : aexp → Prop :=
+  | VNUNum : ∀n, var_not_used_in_aexp x (ANum n)
+  | VNUId : ∀y, x ≠ y → var_not_used_in_aexp x (AId y)
+  | VNUPlus : ∀a1 a2,
+      var_not_used_in_aexp x a1 →
+      var_not_used_in_aexp x a2 →
+      var_not_used_in_aexp x (APlus a1 a2)
+  | VNUMinus : ∀a1 a2,
+      var_not_used_in_aexp x a1 →
+      var_not_used_in_aexp x a2 →
+      var_not_used_in_aexp x (AMinus a1 a2)
+  | VNUMult : ∀a1 a2,
+      var_not_used_in_aexp x a1 →
+      var_not_used_in_aexp x a2 →
+      var_not_used_in_aexp x (AMult a1 a2).
+
+Theorem t_update_neq : ∀(A : Type) (m : total_map A) x1 x2 v,
+    x1 ≠ x2 →
+    (x1 !-> v ; m) x2 = m x2.
+Proof.
+  intros.
+  unfold t_update. apply beq_string_false_iff in H.
+  rewrite H. auto.
+Qed.
+
+
+Lemma aeval_weakening : ∀x st a ni,
+  var_not_used_in_aexp x a →
+  aeval (x !-> ni ; st) a = aeval st a.
+Proof.
+  intros. induction H;try reflexivity;try simpl;
+  try (rewrite IHvar_not_used_in_aexp1;rewrite IHvar_not_used_in_aexp2;auto).
+  apply t_update_neq. auto.
+Qed.
+  
+Lemma cequiv_trans : forall (c1 c2 c3 : com), cequiv c1 c2 -> cequiv c3 c2 -> cequiv c1 c3.
+Proof.
+  unfold cequiv. intros.
+  apply (@iff_trans (st=[ c1 ]⇒st') (st=[ c2 ]⇒st')).
+  apply H.  symmetry. apply H0.
+Qed.
+  
+Theorem inequiv_exercise:
+  ¬cequiv (WHILE true DO SKIP END) SKIP.
+Proof.
+  unfold not. intros.
+  (*assert(H' : cequiv (WHILE false DO SKIP END) SKIP).
+  apply WHILE_false. simpl. unfold bequiv. auto.*)
+  (*assert(Contra: cequiv (WHILE true DO SKIP END) (WHILE false DO SKIP END)).
+  apply (cequiv_trans _ _ _ H H').*)
+  (*apply (CWhile_congruence_inv BTrue BFalse) in Contra.*)
+  apply loop_never_stops with empty_st empty_st.
+  unfold loop. apply H. constructor.
+Qed.  
+
+Definition subst_equiv_property' := ∀x1 x2 a1 a2,
+  var_not_used_in_aexp x1 a1 -> cequiv (x1 ::= a1;; x2 ::= a2)
+         (x1 ::= a1;; x2 ::= subst_aexp x1 a1 a2).
+
+Theorem swap_noninterfering_assignments: ∀l1 l2 a1 a2,
+  l1 ≠ l2 →
+  var_not_used_in_aexp l1 a2 →
+  var_not_used_in_aexp l2 a1 →
+  cequiv
+    (l1 ::= a1;; l2 ::= a2)
+    (l2 ::= a2;; l1 ::= a1).
+Proof.
+  intros. 
+
+  (* LEAVING EXTENDED EXERCISES AND NODETERMINISTIC IMP*)
