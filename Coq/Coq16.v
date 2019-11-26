@@ -106,3 +106,8 @@ Proof.
   intros.
   apply (H (fun y => x = y)). auto.
 Qed.
+
+Inductive eq_leibniz {A : Type} (x y : A): Type :=
+  eql : forall (P : A -> Type), P x -> P y -> eq_leibniz x y.
+
+
