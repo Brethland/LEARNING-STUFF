@@ -142,9 +142,11 @@ open import Data.Nat using (ℕ; zero; suc; _+_; _*_; _∸_; _^_)
   | *-assoc m n (m ^ p) | *-comm n (m ^ p) | *-assoc m ((m ^ p) * n) (n ^ p) | *-assoc (m ^ p) n (n ^ p)
   | *-assoc m (m ^ p) (n * (n ^ p)) = refl
 
+
+
 ^-identity : ∀ (p : ℕ) → 1 ^ p ≡ 1
 ^-identity zero = refl
-^-identity (suc p) rewrite ^-identity p | +-identityʳ 1 = refl
+^-identity (suc p) rewrite ^-identity p = refl
 
 ^-*-plus : ∀ (m n p : ℕ) → m ^ (n * p) ≡ (m ^ n) ^ p
 ^-*-plus m zero p rewrite ^-identity p = refl
