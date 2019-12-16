@@ -668,6 +668,35 @@ Theorem swap_noninterfering_assignments: ∀l1 l2 a1 a2,
     (l1 ::= a1;; l2 ::= a2)
     (l2 ::= a2;; l1 ::= a1).
 Proof.
-  intros. 
+  intros.  Admitted.
+
+Definition seq_if_dist_l := forall b c1 c2 c3, cequiv
+  (IFB b THEN c1 ;; c2 ELSE c1 ;; c3 FI)
+  (c1 ;; IFB b THEN c2 ELSE c3 FI).
+
+Lemma f_equ : forall {A : Type} {B : Type} {f g : A -> B} (x : A) , f = g -> f x = g x.
+Proof. intros. rewrite H. auto. Qed.
+
+Lemma silly_pre : ~((Z !-> 1; X !-> 1) = (Y !-> 1; X !-> 1)).
+Proof.
+  unfold not. intros. apply (f_equ Z) in H. unfold empty_st in H.
+  unfold t_update, t_empty in H. simpl in H. inversion H.
+Qed.
+
+Theorem seq_if_dist_l_dec :
+  seq_if_dist_l \/ ~ seq_if_dist_l.
+Proof.
+  right. unfold not. intros.
+  specialize (H (X = 0)%imp (X ::= 1)%imp (Y ::= 1)%imp (Z ::= 1)%imp empty_st (Y !-> 1; X !-> 1)).
+  destruct H. assert(silly : empty_st =[ IFB X = 0 THEN X ::= 1;; Y ::= 1 ELSE X ::= 1;; Z ::= 1 FI
+      ]⇒ (Y !-> 1; X !-> 1)).
+   apply E_IfTrue. auto. apply E_Seq with (X !-> 1). apply E_Ass. auto. apply E_Ass. auto.
+  apply H in silly. inversion silly;subst. inversion H3;subst. inversion H6;subst.
+  simpl in H8. inversion H8. inversion H9;subst. simpl in H7.
+  apply silly_pre. auto.
+Qed.
+
 
   (* LEAVING EXTENDED EXERCISES AND NODETERMINISTIC IMP*)
+
+
