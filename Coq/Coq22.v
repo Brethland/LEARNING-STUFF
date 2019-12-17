@@ -375,6 +375,28 @@ Fixpoint fold_constants_bexp (b : bexp) : bexp :=
       end
   end.
 
+Fixpoint optimize_notnot_b (b : bexp) : bexp :=
+  match b with
+  | BNot (BNot b1) => optimize_notnot_b b1
+  | BNot b1        => BNot (optimize_notnot_b b1)
+  | BAnd b1 b2     => BAnd (optimize_notnot_b b1) (optimize_notnot_b b2)
+  | _ => b
+  end.
+
+Lemma negb_optimize : forall b st, beval st (optimize_notnot_b (~ b)) = negb (beval st (optimize_notnot_b b)).
+Proof.
+  intros. induction b;auto.
+  simpl in *. rewrite IHb. destruct (beval st (optimize_notnot_b b));auto.
+Qed.
+
+Theorem optimize_notnot_b_sound : forall b st,
+  beval st (optimize_notnot_b b) = beval st b.
+Proof. 
+  intros. induction b;auto.
+  - rewrite negb_optimize. rewrite IHb. auto.
+  - simpl. rewrite IHb1, IHb2. auto.
+Qed. 
+
 Open Scope imp.
 Fixpoint fold_constants_com (c : com) : com :=
   match c with
@@ -694,6 +716,23 @@ Proof.
   apply H in silly. inversion silly;subst. inversion H3;subst. inversion H6;subst.
   simpl in H8. inversion H8. inversion H9;subst. simpl in H7.
   apply silly_pre. auto.
+Qed.
+
+Definition seq_if_dist_r := forall b c1 c2 c3, cequiv
+  (IFB b THEN c1 ;; c3 ELSE c2 ;; c3 FI)
+  (IFB b THEN c1 ELSE c2 FI ;; c3).
+
+Theorem seq_if_dist_r_dec :
+  seq_if_dist_r \/ ~ seq_if_dist_r.
+Proof.
+  left. intros b c1 c2 c3 st st'.
+  split.
+  - intros. inversion H;subst;try(inversion H6;subst;apply E_Seq with st'0).
+    apply E_IfTrue;repeat assumption. auto.
+    apply E_IfFalse;repeat assumption. auto.
+  - intros. inversion H;subst. inversion H2;subst.
+    + apply E_IfTrue. auto. apply E_Seq with st'0;repeat assumption.
+    + apply E_IfFalse. auto. apply E_Seq with st'0;repeat assumption.
 Qed.
 
 
