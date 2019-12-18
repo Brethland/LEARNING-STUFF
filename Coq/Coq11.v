@@ -597,6 +597,10 @@ Proof.
   - intros. unfold excluded_middle in H.
     unfold double_negation_elimination.
     unfold not. intros.
-    unfold not in H.
-    elim H0. intros.
-    apply H0. 
+    specialize (H P). destruct H. auto.
+    unfold not in H. elim H0. intros.
+    apply H0. auto.
+  - intros. unfold excluded_middle.
+    unfold double_negation_elimination in H.
+    intros. apply H. unfold not in *. auto.
+Qed.

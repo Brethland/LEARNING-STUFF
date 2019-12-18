@@ -1,5 +1,6 @@
 module Solution where
 
+open import Data.Empty
 open import Data.List
 open import Data.Nat
 open import Data.Bool hiding (_≟_)
@@ -36,5 +37,10 @@ subseq-match⇒subseq (x ∷ xs) (y ∷ ys) H with x ≟ y
 
 subseq⇒subseq-match : ∀ xs ys → xs ⊂ ys → xs ⊂* ys ≡ true
 subseq⇒subseq-match .[] .[] subseq-nil = refl
-subseq⇒subseq-match .(a ∷ xs) .(a ∷ ys) (subseq-take a xs ys H) rewrite subseq⇒subseq-match xs ys H = {!!}
-subseq⇒subseq-match xs .(a ∷ ys) (subseq-drop a .xs ys H) = {!!}
+subseq⇒subseq-match (x ∷ xs) .(a ∷ ys) (subseq-take a xs ys H) with x ≟ a
+... | yes refl  = subseq⇒subseq-match xs ys H
+... | no absurd = ⊥-elim (absurd refl)
+subseq⇒subseq-match [] .(a ∷ ys) (subseq-drop a .[] ys H) = refl
+subseq⇒subseq-match (x ∷ xs) .(a ∷ ys) (subseq-drop a .(x ∷ xs) ys H) with x ≟ a
+... | yes refl = {!!}
+... | no _ = {!!}

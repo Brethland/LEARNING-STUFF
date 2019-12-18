@@ -429,7 +429,7 @@ Proof.
     exfalso. apply Hguard. reflexivity.
   - intros st H. constructor. Qed.
 
-Module RepeatExercise.
+(* Module RepeatExercise.
 Inductive com : Type :=
   | CSkip : com
   | CAsgn : string → aexp → com
@@ -521,5 +521,5 @@ Proof.
       apply bexp_eval_true. auto.
     - apply IHHe2. auto. apply (Hhoare st st'). auto. auto.
 Qed.
-
+*)
 (* LEAVING Additional Exercises. *)
