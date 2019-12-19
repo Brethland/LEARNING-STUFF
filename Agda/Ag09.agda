@@ -146,3 +146,9 @@ module ≃-Reasoning where
   A ≃-∎ = ≃-refl
 
 open ≃-Reasoning
+
+postulate
+  extensionality : ∀ {A B : Set} {f g : A → B}
+    → (∀ (x : A) → f x ≡ g x)
+      -----------------------
+    → f ≡ g
