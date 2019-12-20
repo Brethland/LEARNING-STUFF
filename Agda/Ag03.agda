@@ -114,45 +114,63 @@ trichotomy (suc m) (suc n) with trichotomy m n
 ≤-iffʳ-⟨ .0 .(suc _) z⟨s = s≤s z≤n
 ≤-iffʳ-⟨ .(suc _) .(suc _) (s⟨s m⟨n) = s≤s (≤-iffʳ-⟨ _ _ m⟨n)
 
-data even : ℕ → Set
-data odd  : ℕ → Set
+data Even : ℕ → Set
+data Odd  : ℕ → Set
 
-data even where
+data Even where
 
   zero :
       ---------
-      even zero
+      Even zero
 
   suc  : ∀ {n : ℕ}
-    → odd n
+    → Odd n
       ------------
-    → even (suc n)
+    → Even (suc n)
 
-data odd where
+data Odd where
 
   suc   : ∀ {n : ℕ}
-    → even n
+    → Even n
       -----------
-    → odd (suc n)
+    → Odd (suc n)
 
 e+e≡e : ∀ {m n : ℕ}
-  → even m
-  → even n
+  → Even m
+  → Even n
     ------------
-  → even (m + n)
+  → Even (m + n)
 
 o+e≡o : ∀ {m n : ℕ}
-  → odd m
-  → even n
+  → Odd m
+  → Even n
     -----------
-  → odd (m + n)
+  → Odd (m + n)
 
 e+e≡e zero     en  =  en
 e+e≡e (suc om) en  =  suc (o+e≡o om en)
 
 o+e≡o (suc em) en  =  suc (e+e≡e em en)
 
-o+o≡e : ∀ (m n : ℕ) → odd m → odd n → even (m + n)
-o+o≡e m (suc n) om (suc en) rewrite +-suc m n = suc (o+e≡o om en)
+o+o≡e : ∀ {m n : ℕ} → Odd m → Odd n → Even (m + n)
+o+o≡e {m} {suc n} om (suc en) rewrite +-suc m n = suc (o+e≡o om en)
 
+e+o≡o : ∀ (m n : ℕ) → Even m → Odd n → Odd(m + n)
+e+o≡o .0 .(suc _) zero (suc x) = suc x
+e+o≡o (suc m) (suc n) (suc x) (suc x₁) rewrite +-suc m n = suc (suc (o+e≡o x x₁))
 
+infixl 7 _e*e_ _o*e_ _o*o_ _e*o_
+_e*e_ : ∀ {m n : ℕ} → Even m → Even n → Even (m * n)
+_o*e_ : ∀ {m n : ℕ} → Odd  m → Even n → Even (m * n)
+_o*o_ : ∀ {m n : ℕ} → Odd  m → Odd  n → Odd  (m * n)
+_e*o_ : ∀ {m n : ℕ} → Even m → Odd  n → Even (m * n)
+
+zero e*e en  = zero
+suc x e*e en = e+e≡e en (x o*e en)
+
+suc x o*e en = e+e≡e en (x e*e en)
+
+suc x o*o on = o+e≡o on (x e*o on)
+
+zero e*o on  = zero
+suc x e*o on = o+o≡e on (x o*o on)
