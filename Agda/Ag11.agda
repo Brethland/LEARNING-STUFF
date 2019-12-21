@@ -36,3 +36,13 @@ postulate
 
 em-irrefutable : ∀ {A : Set} → ¬ ¬ (A ⊎ ¬ A)
 em-irrefutable k = k (inj₂ (λ x → k (inj₁ x)))
+
+postulate
+  dne : ∀ {A : Set} → ¬ ¬ A → A
+
+em-dne : ∀ {A : Set} → (A ⊎ ¬ A) → (¬ ¬ A → A)
+em-dne (inj₁ x) ¬¬A = x
+em-dne (inj₂ y) ¬¬A = ⊥-elim (¬¬A y)
+
+dne-em : (∀ (A : Set) → ¬ ¬ A → A) → (∀ (A : Set) → A ⊎ ¬ A)
+dne-em H = λ a → H (a ⊎ ((x : a) → ⊥)) (λ z → z (inj₂ (λ x → z (inj₁ x))))
