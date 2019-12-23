@@ -106,4 +106,15 @@ Proof.
   - eapply hoare_consequence_pre. apply hoare_asgn.
     intros st H. unfold assn_sub, t_update. simpl. omega.
   - intros. intros st H'. unfold hoare_triple in H.
-    eapply H in H'. 
+    eapply H in H'. Abort.
+
+Fixpoint fib n :=
+  match n with
+  | 0 => 1
+  | S n' => match n' with
+            | 0 => 1
+            | S n'' => fib n' + fib n''
+            end
+  end.
+
+(* Leaving Weakest Preconditions and Extended Exercises *) 
