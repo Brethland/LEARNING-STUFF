@@ -6,4 +6,4 @@ open import Cubical.Data.Nat
 open import Cubical.Data.Empty
 
 theWrongThing : 1 + 1 ≡ 3 → ⊥
-theWrongThing thatMoney = {!!}
+theWrongThing thatMoney = znots (injSuc (injSuc thatMoney))
