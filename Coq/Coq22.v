@@ -735,6 +735,26 @@ Proof.
     + apply E_IfFalse. auto. apply E_Seq with st'0;repeat assumption.
 Qed.
 
+Definition capprox (c1 c2 : com) : Prop :=
+  forall (st st' : state),
+  st =[ c1 ]⇒ st' -> st =[ c2 ]⇒ st'.
+
+Definition cmax_exists := exists cmax, forall c, capprox c cmax.
+
+Theorem cmax_exists_dec : cmax_exists \/ ~ cmax_exists.
+Proof.
+  right. intros H. unfold cmax_exists in H. destruct H.
+  unfold capprox in H.
+  assert(H' : exists c, empty_st =[ c ]⇒ (X !-> 1)). exists (X ::= 1)%imp.
+  constructor. auto. destruct H'.
+  assert(H'' : exists c, empty_st =[ c ]⇒ (X !-> 2)). exists (X ::= 2)%imp.
+  constructor.  auto. destruct H''.
+  assert(contra1 : empty_st =[ x ]⇒ (X !-> 1)). apply (H x0). auto.
+  assert(contra2 : empty_st =[ x ]⇒ (X !-> 2)). apply (H x1). auto.
+  specialize (ceval_deterministic _ _ _ _ contra1 contra2).
+  intros. assert(contra : (X !-> 1) X = (X !-> 2) X). rewrite H2. auto.
+  unfold t_update in contra. simpl in contra. inversion contra.
+Qed.
 
   (* LEAVING EXTENDED EXERCISES AND NODETERMINISTIC IMP*)
 
