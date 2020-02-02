@@ -125,6 +125,12 @@ Qed.
 Corollary typable_empty__closed : ∀t T,
     empty ⊢ t ∈ T →
     closed t.
-
-
-
+Proof.
+  intros. inversion H;subst;unfold closed in *.
+  1 : inversion H0.
+  all : intros x contra.
+  1 : apply (free_in_context _ _ (Arrow T11 T12) empty) in contra;auto.
+  3 - 4 : apply (free_in_context _ _ Bool empty) in contra;inversion contra;inversion H0;auto.
+  2 - 3 : apply (free_in_context _ _ T empty) in contra;auto.
+  all : destruct contra as [m H']; inversion H'.
+Qed.
