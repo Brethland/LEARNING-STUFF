@@ -2,9 +2,9 @@
 // By Brethland, for Yuki.
 /* TODO : 1. Garbage Collection
           2. Error Handling
-		  3. Real Number
-		  4. Type Checker
-		  5. Continuation
+          3. Real Number
+          4. Type Checker
+          5. Continuation
 */
 #include <stdio.h>
 #include <stdlib.h>
