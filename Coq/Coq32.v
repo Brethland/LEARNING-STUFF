@@ -5,6 +5,7 @@
 
 Set Warnings "-notation-overridden,-parsing".
 Require Import Strings.String.
+Require Import Coq.Logic.FunctionalExtensionality. 
 Add LoadPath "C:\Users\ycy12\Documents\Workspace\LEARNING-STUFF\Coq".
 Load Coq31.
 
@@ -134,3 +135,153 @@ Proof.
   2 - 3 : apply (free_in_context _ _ T empty) in contra;auto.
   all : destruct contra as [m H']; inversion H'.
 Qed.
+
+Lemma context_invariance : ∀Gamma Gamma' t T,
+     Gamma ⊢ t ∈ T →
+     (∀x, appears_free_in x t → Gamma x = Gamma' x) →
+     Gamma' ⊢ t ∈ T.
+Proof with eauto.
+  intros.
+  generalize dependent Gamma'.
+  induction H; intros; auto.
+  - apply T_Var. rewrite <- H0...
+  - apply T_Abs.
+    apply IHhas_type. intros x1 Hafi.
+    unfold update. unfold t_update. destruct (beq_string x0 x1) eqn: Hx0x1...
+    rewrite beq_string_false_iff in Hx0x1. auto.
+  - apply T_App with T11...
+Qed.
+
+Lemma t_update_shadow : ∀(A : Type) (m : total_map A) x v1 v2,
+    (x !-> v2 ; x !-> v1 ; m) = (x !-> v2 ; m).
+Proof.
+  intros.
+  apply functional_extensionality.
+  intros. unfold t_update.
+  destruct (beq_string x0 x1) eqn:HE.
+  - auto.
+  - auto.
+Qed.
+
+Theorem beq_string_refl : ∀ s, true = beq_string s s. 
+Proof. 
+  intros s. unfold beq_string. destruct (string_dec s s) as [|Hs]. 
+  - reflexivity.   
+  - destruct Hs. reflexivity. 
+Qed.
+
+Theorem beq_string_true_iff : ∀ x y : string,   beq_string x y = true ↔ x = y. 
+Proof. 
+  intros x y. 
+  unfold beq_string. 
+  destruct (string_dec x y) as [|Hs]. 
+  - subst. split. auto. auto.
+  - split. 
+    + intros contra. inversion contra.
+    + intros H. destruct Hs. auto.
+Qed.
+
+Theorem beq_string_false_iff : ∀ x y : string,   beq_string x y = false   ↔ x ≠ y. 
+Proof. 
+  intros x y. rewrite <- beq_string_true_iff. 
+  rewrite not_true_iff_false. reflexivity. 
+Qed.
+
+Lemma substitution_preserves_typing : ∀Gamma x U t v T,
+  (x ⊢> U ; Gamma) ⊢ t ∈ T →
+  empty ⊢ v ∈ U →
+  Gamma ⊢ [x:=v]t ∈ T.
+Proof with eauto.
+  intros Gamma x U t v T Ht Ht'.
+  generalize dependent Gamma. generalize dependent T.
+  induction t; intros T Gamma H;
+    (* in each case, we'll want to get at the derivation of H *)
+    inversion H; subst; simpl...
+  - (* var *)
+    rename s into y. destruct (eqb_spec x y) as [Hxy|Hxy].
+    + (* x=y *)
+      subst. unfold update in H2.
+      rewrite t_update_eq in H2.
+      inversion H2; subst.
+      eapply context_invariance. eassumption.
+      apply typable_empty__closed in Ht'. unfold closed in Ht'.
+      intros. apply (Ht' x0) in H0. inversion H0.
+    + (* x<>y *)
+      apply T_Var. unfold update in H2. rewrite t_update_neq in H2...
+  - (* abs *)
+    rename s into y. rename t into T. apply T_Abs.
+    destruct (eqb_spec x y) as [Hxy | Hxy].
+    + (* x=y *)
+      subst. unfold update in H5. rewrite t_update_shadow in H5. apply H5.
+    + (* x<>y *)
+      apply IHt. eapply context_invariance...
+      intros z Hafi. unfold update, t_update.
+      destruct (eqb_spec y z) as [Hyz | Hyz]; subst; trivial.
+      rewrite <- beq_string_false_iff in Hxy.
+      rewrite Hxy... rewrite <- beq_string_false_iff in *. rewrite Hyz...
+Qed.
+
+Theorem preservation : ∀t t' T,
+  empty ⊢ t ∈ T →
+  t -->> t' →
+  empty ⊢ t' ∈ T.
+Proof with eauto.
+  remember (@empty ty) as Gamma.
+  intros t t' T HT. generalize dependent t'.
+  induction HT;
+       intros t' HE; subst Gamma; subst;
+       try solve [inversion HE; subst; auto].
+  - (* T_App *)
+    inversion HE; subst...
+    (* Most of the cases are immediate by induction,
+       and eauto takes care of them *)
+    + (* ST_AppAbs *)
+      apply substitution_preserves_typing with T11...
+      inversion HT1...
+Qed.
+
+Definition stuck (t:tm) : Prop :=
+  (normal_form step) t ∧ ¬value t.
+Corollary soundness : ∀t t' T,
+  empty ⊢ t ∈ T →
+  t -->* t' →
+  ~(stuck t').
+Proof.
+  intros t t' T Hhas_type Hmulti. unfold stuck.
+  intros [Hnf Hnot_val]. unfold normal_form in Hnf.
+  induction Hmulti.
+  - eapply progress in Hhas_type. destruct Hhas_type;auto.
+  - eapply IHHmulti;auto. eapply preservation. apply Hhas_type. auto.
+Qed.
+
+Theorem unique_types : ∀Gamma e T T',
+  Gamma ⊢ e ∈ T →
+  Gamma ⊢ e ∈ T' →
+  T = T'.
+Proof.
+  intros Gamma e. generalize dependent Gamma. 
+  induction e;intros;inversion H;subst;inversion H0;subst;auto.
+  - rewrite H3 in H4. inversion H4;auto.
+  - specialize (IHe2 _ _ _ H6 H8);subst. specialize (IHe1 _ _ _ H4 H5). inversion IHe1. auto.
+  - specialize (IHe _ _ _ H6 H7);subst;auto.
+  - specialize (IHe2 _ _ _ H7 H10);auto. 
+Qed.
+
+Module STLCArith.
+Import STLC.
+
+Inductive ty : Type :=
+  | Arrow : ty → ty → ty
+  | Nat : ty.
+
+Inductive tm : Type :=
+  | var : string → tm
+  | app : tm → tm → tm
+  | abs : string → ty → tm → tm
+  | const : nat → tm
+  | scc : tm → tm
+  | prd : tm → tm
+  | mlt : tm → tm → tm
+  | test0 : tm → tm → tm → tm.
+
+(* Leaving STLCArith *)
