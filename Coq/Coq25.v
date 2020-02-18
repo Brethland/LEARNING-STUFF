@@ -117,4 +117,29 @@ Fixpoint fib n :=
             end
   end.
 
+Lemma negb_inv : forall a, ~ (negb a = true) -> a = true.
+Proof. intros. destruct a. auto. simpl in H. destruct H. auto.
+Qed. 
+
+From Coq Require Import Arith Div2 Omega Lia Nat.
+
+Theorem pow_correct : forall (n : nat) (a : nat), {{ fun st => st X = a /\ st Y = 1 }} 
+  ( WHILE ~ (Y = n) DO
+      X ::= X * a ;;
+      Y ::= Y + 1
+    END ) {{ fun st => st X = a ^ n }}.
+Proof.
+  intros. eapply hoare_consequence_post.
+  apply hoare_consequence_pre with (fun st => st X = a ^ (st Y)).
+  apply hoare_while. eapply hoare_seq.
+  apply hoare_asgn. eapply hoare_consequence_pre. apply hoare_asgn.
+  unfold assert_implies, assn_sub, t_update. simpl. intros. destruct H.
+  rewrite H. rewrite Nat.pow_add_r. simpl.
+  assert(H' : a * 1 = a) by omega. rewrite H'. auto.
+  1 - 2 : unfold assert_implies, assn_sub, t_update;intros;destruct H. 
+  rewrite H0. simpl. assert(H' : a * 1 = a) by omega. rewrite H'. auto.
+  unfold bassn in H0. rewrite H.  assert (H' : st Y = n).
+  apply negb_inv in H0. apply beq_nat_true in H0. auto. subst. auto.
+Qed.
+
 (* Leaving Weakest Preconditions and Extended Exercises *) 
