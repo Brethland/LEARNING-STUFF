@@ -250,6 +250,26 @@ Proof.
   - rewrite <- plus_n_Sm. apply le_S. auto.
 Qed.
 
+Require Import Lia.
+
+Lemma fuck : forall a b c, a + b <= c -> a <= c /\ b <= c.
+Proof.
+  induction a;intros;split;simpl in *;auto. apply O_le_n.
+  destruct c. inversion H. 
+  1 : apply n_le_m__Sn_le_Sm;apply Sn_le_Sm__n_le_m in H.
+  2 : apply Sn_le_m__n_le_m in H.
+  1 - 2 : apply IHa in H;inversion H;auto.
+Qed.
+
+Lemma silly1 : forall a b c d, a + b <= c + d -> a <= c \/ b <= d.
+Proof.
+  induction a;intros.
+  - left. apply O_le_n.
+  - destruct c;replace (0 + d) with d by auto. right. apply fuck in H;inversion H;auto.
+    simpl in *. apply Sn_le_Sm__n_le_m in H. apply IHa in H. destruct H;auto.
+    left. apply n_le_m__Sn_le_Sm;auto.
+Qed.
+
 Lemma plus_lt : forall n1 n2 m, n1 + n2 < m -> n1 < m /\ n2 < m.
 Proof.
   unfold lt.
