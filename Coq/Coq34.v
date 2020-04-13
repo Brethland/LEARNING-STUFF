@@ -13,6 +13,7 @@ Inductive tys : Type :=
   | Base : string → tys
   | Arrow' : tys → tys → tys
   | Unit : tys
+  | Prod : tys -> tys -> tys
 .
 Inductive tms : Type :=
   | var' : string → tms
@@ -22,6 +23,9 @@ Inductive tms : Type :=
   | fls' : tms
   | test' : tms → tms → tms → tms
   | unit : tms
+  | pair : tms → tms → tms
+  | fst : tms → tms
+  | snd : tms → tms
 .
 
 Fixpoint subst (x:string) (s:tms) (t:tms) : tms :=
@@ -39,7 +43,10 @@ Fixpoint subst (x:string) (s:tms) (t:tms) : tms :=
   | test' t1 t2 t3 =>
       test' (subst x s t1) (subst x s t2) (subst x s t3)
   | unit =>
-      unit
+    unit
+  | pair t1 t2 => pair (subst x s t1) (subst x s t2)
+  | fst t1 => fst (subst x s t1)
+  | snd t1 => snd (subst x s t1)
   end.
 Notation "'[' x ':=' s ']' t" := (subst x s t) (at level 20).
 
@@ -52,7 +59,10 @@ Inductive value' : tms → Prop :=
       value' fls'
   | v_unit :
       value' unit
-.
+  | v_pair : ∀v1 v2,
+      value' v1 →
+      value' v2 →
+      value' (pair v1 v2).
 Hint Constructors value'.
 Reserved Notation "t1 '--->' t2" (at level 40).
 Inductive step' : tms → tms → Prop :=
@@ -73,6 +83,18 @@ Inductive step' : tms → tms → Prop :=
   | ST_Test' : ∀t1 t1' t2 t3,
       t1 ---> t1' →
       (test' t1 t2 t3) ---> (test' t1' t2 t3)
+  | ST_Pair1 : forall t1 t1' t2,
+      t1 ---> t1' -> pair t1 t2 ---> pair t1' t2
+  | ST_Pair2 : forall v t t',
+      value' v -> t ---> t' -> pair v t ---> pair v t'
+  | ST_Fst1 : forall t t',
+      t ---> t' -> fst t ---> fst t'
+  | ST_FstPair : forall v1 v2,
+      value' v1 -> value' v2 -> fst (pair v1 v2) ---> v1
+  | ST_Snd1 : forall t t',
+      t ---> t' -> snd t ---> snd t'
+  | ST_SndPair : forall v1 v2,
+      value' v1 -> value' v2 -> snd (pair v1 v2) ---> v2
 where "t1 '--->' t2" := (step' t1 t2).
 Hint Constructors step'.
 
@@ -89,7 +111,11 @@ Inductive subtype : tys → tys → Prop :=
   | S_Arrow : ∀S1 S2 T1 T2,
       T1 <: S1 →
       S2 <: T2 →
-      (Arrow' S1 S2) <: (Arrow' T1 T2)
+            (Arrow' S1 S2) <: (Arrow' T1 T2)
+  | S_Pair : forall S1 S2 T1 T2,
+      S1 <: T1 ->
+      S2 <: T2 ->
+      (Prod S1 S2) <: (Prod T1 T2)       
 where "T '<:' U" := (subtype T U).
 
 Hint Constructors subtype.
@@ -109,6 +135,22 @@ Example subtyping_example_0 :
   (* C->Bool <: C->Top *)
 Proof. auto. Qed.
 
+Definition Person : tys :=
+  (Prod String Top).
+Definition Student : tys :=
+  (Prod String (Prod Float Top)).
+Definition Employee : tys :=
+  (Prod String (Prod Integer Top)).
+
+Example sub_student_person :
+  Student <: Person.
+Proof. unfold Student, Person. auto.
+Qed.
+
+Example sub_employee_person :
+  Employee <: Person.
+Proof.
+  unfold Employee, Person. auto. Qed.
 End Examples.
 
 Definition partial_map (A : Type) := total_map (option A).
@@ -151,7 +193,13 @@ Inductive has_type' : context → tms → tys → Prop :=
   | T_Sub : ∀Gamma t S T,
       Gamma ⊢ t ∈ S →
       S <: T →
-      Gamma ⊢ t ∈ T
+           Gamma ⊢ t ∈ T
+  | T_Pair : forall Gamma t1 T1 t2 T2,
+    Gamma ⊢ t1 ∈ T1 -> Gamma ⊢ t2 ∈ T2 -> Gamma ⊢ (pair t1 t2) ∈ Prod T1 T2
+  | T_Fst : forall Gamma t T1 T2,
+      Gamma ⊢ t ∈ Prod T1 T2 -> Gamma ⊢ fst t ∈ T1
+  | T_Snd : forall Gamma t T1 T2,
+      Gamma ⊢ t ∈ Prod T1 T2 -> Gamma ⊢ snd t ∈ T2
 
 where "Gamma '⊢' t '∈' T" := (has_type' Gamma t T).
 Hint Constructors has_type'.
@@ -162,6 +210,27 @@ Hint Extern 2 (_ = _) => compute; reflexivity.
 Module Examples2.
   Import Examples.
 
+  Example silly1 :
+      empty ⊢ (pair (abs' z A (var' z)) (abs' z B (var' z)))
+            ∈ (Prod (Arrow' A A) (Arrow' B B)).
+  Proof. auto. Qed.
+
+  Example silly2 :
+    empty ⊢ (app' (abs' x (Prod Top (Arrow' B B)) (snd (var' x)))
+          (pair (abs' z A (var' z)) (abs' z B (var' z))))
+         ∈ (Arrow' B B).
+  Proof. eapply T_App. eapply T_Abs. eauto. eapply T_Pair.
+         assert ((Arrow' A A) <: Top) by eauto.
+         apply T_Sub with (Arrow' A A);eauto. eauto. Qed.
+
+  Example silly3 :
+    empty ⊢ (app' (abs' z (Arrow' (Arrow' C C) (Prod Top (Arrow' B B)))
+                  (snd (app' (var' z) (abs' z C (var' z)))))
+              (abs' z (Arrow' C C) (pair (abs' x A (var' x)) (abs' x B (var' x)))))
+         ∈ (Arrow' B B).
+  Proof. eapply T_App. eapply T_Abs. eauto. eapply T_Abs.
+         eapply T_Pair. apply T_Sub with (Arrow' A A). eauto.
+         eauto. eauto. Qed.
 End Examples2.
 
 Lemma sub_inversion_Bool : ∀U,
@@ -190,8 +259,24 @@ Proof with eauto.
     exists x1, x2. inversion H2. inversion H1. clear H2 H1.
     split;destruct H0...
   - inversion HeqV;subst. exists S1, S2...
+  - inversion HeqV;subst.
 Qed.
 
+Lemma sub_inversion_prod : forall U V1 V2,
+      U <: Prod V1 V2 -> exists U1 U2,
+      U = Prod U1 U2 /\ U1 <: V1 /\ U2 <: V2.
+Proof with eauto.
+ intros U V1 V2 Hs.
+ remember (Prod V1 V2) as V.
+ generalize dependent V2. generalize dependent V1.
+ induction Hs;intros.
+ exists V1, V2...
+ apply IHHs2 in HeqV;inversion HeqV;inversion H;clear HeqV H.
+ destruct H0. apply IHHs1 in H;inversion H;inversion H1;clear H H1.
+ exists x1, x2. inversion H2. inversion H1. clear H2 H1.
+ split;destruct H0...
+ all : inversion HeqV...
+ subst... Qed.
 Require Import Coq.Program.Equality.
 
 Lemma canonical_forms_of_arrow_types : ∀Gamma s T1 T2,
@@ -204,6 +289,21 @@ Proof with eauto.
   1 - 3 : inversion H'.
   apply sub_inversion_arrow in H0. destruct H0 as [U1 (U2, (H1, (H2, H3)))].
   apply IHhas_type' in H1...
+  1 - 2 : inversion H'.
+Qed.
+
+Lemma canonical_forms_of_prod_types : forall Gamma s T1 T2,
+    Gamma ⊢ s ∈ Prod T1 T2 ->
+    value' s ->
+    exists s1 s2,
+      s = pair s1 s2 /\ value' s1 /\ value' s2.
+Proof with eauto.
+  intros Gamma s T1 T2 H. dependent induction H;intros H';subst...
+  1 - 3 : inversion H'.
+  3 - 4 : inversion H'.
+  apply sub_inversion_prod in H0. destruct H0 as [U1 [U2 [H1 [H2 H3]]]].
+  apply (IHhas_type' _ _ H1) in H'...
+  inversion H';subst...
 Qed.
 
 Ltac solve_by_inverts n :=
@@ -252,6 +352,20 @@ Proof with eauto.
         by (eapply canonical_forms_of_Bool; eauto).
       inversion H0; subst...
     + inversion H. rename x into t1'. eauto.
+  - destruct IHHt1;subst...
+    + destruct IHHt2...
+      right. destruct H0. exists (pair t1 x)...
+    + right. destruct H. exists (pair x t2)...
+  - right. destruct IHHt;subst...
+    specialize (canonical_forms_of_prod_types _ _ _ _ Ht H);intros.
+    destruct H0 as [s1 [s2 H0]];subst. destruct H0 as [H0 [H1 H2]].
+    exists s1;subst...
+    destruct H. exists (fst x)...
+  - right. destruct IHHt;subst...
+    specialize (canonical_forms_of_prod_types _ _ _ _ Ht H);intros.
+    destruct H0 as [s1 [s2 H0]];subst. destruct H0 as [H0 [H1 H2]].
+    exists s2;subst...
+    destruct H. exists (snd x)...
 Qed.
 
 Lemma typing_inversion_abs : ∀Gamma x S1 t2 T,
@@ -269,6 +383,42 @@ Proof with eauto.
   - (* T_Sub *)
     destruct IHhas_type' as [S2 [Hsub Hty]]...
   Qed.
+
+Lemma typing_inversion_pair : forall Gamma t1 t2 T,
+    Gamma ⊢ (pair t1 t2) ∈ T ->
+    exists T1 T2,
+      Gamma ⊢ t1 ∈ T1 /\ Gamma ⊢ t2 ∈ T2 /\ (Prod T1 T2) <: T.
+Proof with eauto.
+  intros. remember (pair t1 t2) as t.
+  induction H;inversion Heqt;subst;intros;try solve_by_invert.
+  eauto. apply IHhas_type' in H1. destruct H1 as [T1 [T2 [H1 [H2 H3]]]].
+  exists T1, T2...
+  exists T1, T2...
+Qed.
+
+Lemma typing_inversion_fst : forall Gamma x T,
+    Gamma ⊢ (fst x) ∈ T ->
+    exists T1 T2,
+    Gamma ⊢ x ∈ (Prod T1 T2) /\ T1 <: T.
+Proof with eauto.
+ intros. remember (fst x) as t.
+ induction H;inversion Heqt;subst;intros;try solve_by_invert.
+ apply IHhas_type' in H1. destruct H1 as [T1 [T2 [H1 H2]]].
+ exists T1, T2...
+ exists T1, T2...
+Qed.
+
+Lemma typing_inversion_snd : forall Gamma x T,
+    Gamma ⊢ (snd x) ∈ T ->
+    exists T1 T2,
+    Gamma ⊢ x ∈ (Prod T1 T2) /\ T2 <: T.
+Proof with eauto.
+ intros. remember (snd x) as t.
+ induction H;inversion Heqt;subst;intros;try solve_by_invert.
+ apply IHhas_type' in H1. destruct H1 as [T1 [T2 [H1 H2]]].
+ exists T1, T2...
+ exists T1, T2...
+Qed.
 
 Lemma typing_inversion_var : ∀Gamma x T,
   Gamma ⊢ (var' x) ∈ T →
@@ -375,7 +525,16 @@ Inductive appears_free_in : string → tms → Prop :=
   | afi_test3 : ∀x t1 t2 t3,
       appears_free_in x t3 →
       appears_free_in x (test' t1 t2 t3)
+  | afi_pair1 : forall x t1 t2,
+      appears_free_in x t1 -> appears_free_in x (pair t1 t2)
+  | afi_pair2 : forall x t1 t2,
+      appears_free_in x t2 -> appears_free_in x (pair t1 t2)
+  | afi_fst : forall x t,
+      appears_free_in x t -> appears_free_in x (fst t)
+  | afi_snd : forall x t,
+      appears_free_in x t -> appears_free_in x (snd t)
 .
+
 
 Hint Constructors appears_free_in.
 
@@ -415,6 +574,7 @@ Proof with eauto.
     specialize (false_beq_string _ _ n);intros;rewrite H0...
   - (* T_Test *)
     apply T_Test'...
+  - apply T_Pair...
 Qed.
 
 Lemma free_in_context : ∀x t T Gamma,
@@ -494,8 +654,27 @@ Proof with eauto.
   - (* unit *)
     assert (Unit <: S)
       by apply (typing_inversion_unit _ _ Htypt)...
+  - (* pair *)
+    destruct (typing_inversion_pair _ _ _ _ Htypt)
+      as [T1 [T2 [Htypt1 [Htypt2 Htypt3]]]].
+    eapply T_Sub with (Prod T1 T2)...
+  - (* fst *)
+    destruct (typing_inversion_fst _ _ _ Htypt)
+      as [T1 [T2 [Htypt1 Htypt2]]].
+    eapply T_Fst with T2...
+  - (* snd *)
+    destruct (typing_inversion_snd _ _ _ Htypt)
+      as [T1 [T2 [Htypt1 Htypt2]]].
+    eapply T_Snd with T1...
 Qed.
 
+Lemma stupid : forall Gamma t1 t2 T1 T2,
+    Gamma ⊢ (pair t1 t2) ∈ (Prod T1 T2) ->
+    Gamma ⊢ t1 ∈ T1 /\ Gamma ⊢ t2 ∈ T2.
+Proof with eauto.
+  intros. dependent induction H;subst...
+Admitted.
+    
 Theorem preservation' : ∀t t' T,
      empty ⊢ t ∈ T →
      t ---> t' →
@@ -504,12 +683,13 @@ Proof with eauto.
   intros t t' T HT.
   remember empty as Gamma. generalize dependent HeqGamma.
   generalize dependent t'.
-  induction HT;
-    intros t' HeqGamma HE; subst; inversion HE; subst...
+  induction HT; intros t' HeqGamma HE; subst; inversion HE; subst...
   - (* T_App *)
     inversion HE; subst...
     + (* ST_AppAbs *)
       destruct (abs_arrow _ _ _ _ _ HT1) as [HA1 HA2].
       apply substitution_preserves_typing with T...
+  - apply stupid in HT;destruct HT...
+  - apply stupid in HT;destruct HT...
 Qed.
 
