@@ -1,7 +1,5 @@
 module DNF where
 
-
-
 data Prop = Prop Char Bool deriving Show
 
 and :: Prop -> Prop -> Bool
