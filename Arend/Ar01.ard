@@ -1,0 +1,175 @@
+\import Data.Bool
+\import Paths
+
+\open Nat
+
+\func \infixr 8 ^ (x y : Nat) : Nat \elim y
+  | 0     => 1
+  | suc y => x Nat.* x ^ y
+
+\func fac (x : Nat) : Nat
+  | 0     => 1
+  | suc x => (suc x) Nat.* fac x
+
+\data List (A : \Type) | nil | cons A (List A)
+
+\func \infixl 6 ++ {A : \Type} (xs ys : List A) : List A \elim xs
+  | nil       => ys
+  | cons x xs => cons x (xs ++ ys)
+
+\func map {A B : \Type} (f : A -> B) (xs : List A) : List B \elim xs
+  | nil       => nil
+  | cons x xs => cons (f x) (map f xs)
+
+\func head {A : \Type} (xs : List A) : List A \elim xs
+  | nil      => nil
+  | cons x _ => cons x nil
+
+\func tail {A : \Type} (xs : List A) : List A \elim xs
+  | nil       => nil
+  | cons _ xs => xs
+
+\func if {A : \Type} (b : Bool) (x y : A) : A \elim b
+  | true  => x
+  | false => y
+
+\func sort {A : \Type} (less : A -> A -> Bool) (xs : List A) : List A \elim xs
+  | nil       => nil
+  | cons x xs => insert less x (sort less xs)
+  \where {
+    \func insert {A : \Type} (less : A -> A -> Bool) (x : A) (xs : List A) : List A \elim xs
+      | nil        => cons x nil
+      | cons x' xs => if (less x x') (cons x (cons x' xs)) (cons x' (insert less x xs))
+  }
+
+\func reverse {A : \Type} (xs : List A) : List A => rev nil xs
+  \where
+    \func rev {A : \Type} (acc xs : List A) : List A \elim xs
+      | nil       => acc
+      | cons x xs => rev (cons x acc) xs
+
+\func reverse-Inv {A : \Type} (xs : List A) : reverse (reverse xs) = xs => rev-Inv nil xs
+    \where {
+      \func rev-Inv {A : \Type} (acc xs : List A) : reverse (reverse.rev acc xs) = reverse.rev xs acc \elim xs
+        | nil       => idp
+        | cons x xs => rev-Inv (cons x acc) xs
+    }
+
+\data Unit | unit
+
+\data Empty
+
+\func \infix 6 < (x y : Nat) : Bool \elim x , y
+  | 0     , 0     => false
+  | 0     , _     => true
+  | _     , 0     => false
+  | suc x , suc y => x < y
+
+\func +-assoc (x y z : Nat) : x + y + z = x + (y + z) \elim z
+  | 0     => idp
+  | suc z => pmap suc (+-assoc x y z)
+
+\func length {A : \Type} (xs : List A) : Nat \elim xs
+  | nil       => 0
+  | cons x xs => suc (length xs)
+
+\func T (b : Bool) : \Type
+  | true  => Unit
+  | false => Empty
+
+\func lookup {A : \Type} (n : Nat) (xs : List A) (p : T (n < length xs)) : A \elim n , xs
+  | 0     , cons x _   => x
+  | suc n , cons _ xs  => lookup n xs p
+
+\data Vec (A : \Type) (n : Nat) \elim n
+  | 0     => fnil
+  | suc n => fcons A (Vec A n)
+
+\func Head {A : \Type} {n : Nat} (xs : Vec A (suc n)) : A \elim xs
+  | fcons x _ => x
+
+\func Tail {A : \Type} {n : Nat} (xs : Vec A (suc n)) : Vec A n \elim xs
+  | fcons _ xs => xs
+
+\data Maybe (A : \Type) | nothing | just A
+
+\func first {A : \Type} {n : Nat} (xs : Vec A n) : Maybe A \elim n , xs
+  | 0     , fnil       => nothing
+  | suc n , fcons x xs => just x
+
+\func append {A : \Type} {n m : Nat} (xs : Vec A n) (ys : Vec A m) : Vec A (m + n) \elim n , xs
+  | 0     , fnil       => ys
+  | suc n , fcons x xs => fcons x (append xs ys)
+
+\func replicate {A : \Type} (n : Nat) (x : A) : Vec A n \elim n
+  | 0     => fnil
+  | suc n => fcons x (replicate n x)
+
+\func mapVec {A B : \Type} {n : Nat} (f : A -> B) (xs : Vec A n) : Vec B n \elim n , xs
+  | 0     , fnil       => fnil
+  | suc n , fcons x xs => fcons (f x) (mapVec f xs)
+
+\func zipWith {A B C : \Type} {n : Nat} (f : A -> B -> C) (xs : Vec A n) (ys : Vec B n) : Vec C n \elim n , xs , ys
+  | 0 , fnil , fnil => fnil
+  | suc n , fcons x xs , fcons y ys => fcons (f x y) (zipWith f xs ys)
+
+\func lengthVec {A : \Type} {n : Nat} (xs : Vec A n) => n
+
+\data CTree (A : \Type) (n : Nat) \elim n
+  | 0 => leaf
+  | suc n => tree A (CTree A n) (CTree A n)
+
+\data Tree (A : \Type) (n : Nat) \elim n
+  | _ => leaf'
+  | suc n => tree' A (Tree A n) (Tree A n)
+
+\func max (x y : Nat) => (if (x < y) y x)
+
+\func height {A : \Type} {n : Nat} (t : Tree A n) : Nat \elim n , t
+  | _     , leaf'       => 0
+  | suc n , tree' _ l r => suc (max (height l) (height r))
+
+\func Leibniz {A : \Type} {a a' : A} (f : \Pi (P : A -> \Type) -> \Sigma (P a -> P a') (P a' -> P a)) : a = a'
+  => (f (\lam x => a = x)).1 idp
+
+\func transport {A : \Type} (B : A -> \Type) {a a' : A} (p : a = a') (b : B a) : B a'
+  => coe (\lam i => B (p @ i)) b right
+
+\func inv {A : \Type} {a a' : A} (p : a = a') : a' = a
+  => transport (\lam x => x = a) p idp
+
+\func trans {A : \Type} {a a' a'' : A} (p : a = a') (q : a' = a'') : a = a''
+  => transport (\lam x => a = x) q p
+
+\func pmap {A B : \Type} (f : A -> B) {a a' : A} (p : a = a') : f a = f a'
+  => path (\lam i => f (p @ i))
+
+\func pmap3 {A B C : \Type} (f : A -> B -> C) {a a' : A} {b b' : B} (p : a = a') (p' : b = b') : f a b = f a' b'
+  => trans (pmap (\lam x => f x b) p) (pmap (\lam x => f a' x) p')
+
+\func repl {A B : \Type} (p : A = B) (a : A) : B
+  => transport (\lam x => x) p a
+
+\func transport' {A : \Type} (B : A -> \Type) {a a' : A} (p : a = a') (b : B a) : B a'
+  => repl (pmap (\lam x => B x) p) b
+
+\func l=r : left = right => path (\lam i => i)
+
+\func sigma= {A B : \Type} {a a' : A} {b b' : B} (p : a = a') (p' : b = b') : (a , b) = (a' , b')
+  => path (\lam i => (p @ i, p' @ i))
+
+\func sigma=' {A B : \Type} (p p' : \Sigma A B) (p'' : p = p') : p.1 = p'.1
+  =>  path (\lam i => (p'' @ i).1)
+
+\func funExt {A : \Type} (B : A -> \Type) {f g : \Pi (a : A) -> B a}
+             (p : \Pi (a : A) -> f a = g a) : f = g
+  => path (\lam i => \lam a => p a @ i)
+
+\func TN (n : Nat) : \Type
+  | 0 => Unit
+  | suc n => Empty
+
+\func zero/=suc {n : Nat} (p : 0 = suc n) : Empty => transport TN p unit
+
+\func \infixr 5 *> {A : \Type} {a a' a'' : A} (p : a = a') (q : a' = a'') : a = a''
+  => transport (\lam x => a = x) q p
