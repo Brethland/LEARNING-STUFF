@@ -1,0 +1,5093 @@
+#+TITLE: SICP Exercises
+#+AUTHOR: Brethland
+
+* CH1
+** 1.1 基本元素
+*** 1.1
+- 10, 12, 8, 3, 6, a, b, 19, #f, 4, 16, 6, 16
+*** 1.2
+#+BEGIN_SRC scheme
+  (/ (+ 5 4
+        (- 2
+           (- 3
+              (+ 6
+                 (/ 4 5)))))
+     (* 3
+        (- 6 2)
+        (- 2 7)))
+#+END_SRC
+
+*** 1.3
+#+BEGIN_SRC scheme
+  (define (max-two-numbers a b c) 
+    (cond ((> a b) (+ a
+                      (cond ((> b c) b)
+                            (else c))))
+          (else (+ b
+                      (cond ((> a c) a)
+                            (else c))))))
+#+END_SRC
+
+*** 1.4
+对运算符求值，这是个if语句，谓词是(> b
+0)，如果是真，得到+过程，否则得到-过程，然后对运算对象a和b求值，得出答案。
+
+*** 1.5
+应用序
+
+(test 0 (p)) =>
+
+((if (= x 0) 0 y) 0 (p)) =>
+
+((if (= x 0) 0 y) 0 (p)) =>
+
+......
+
+正则序
+
+(test 0 (p)) =>
+
+(if (= 0 0) 0 (p)) =>
+
+0
+
+提到的是惰性求值的好处
+
+*** 1.6
+会无限递归，原因：Lisp是应用序求值，对new-if的每个参数，lisp都会求值，从而会造成无限递归
+
+*** 1.7
+对于很小的数，比如（sqrt 0.00001），由于精度要求0.001，它会返回0.002。
+
+对于很大的数，比如（sqrt 1145141919810），由于大数的精度是很粗略的（MIT
+Scheme的问题？），我们会陷入死循环。
+
+#+BEGIN_SRC scheme
+  (define (good-enough?)
+
+      (< (abs (- guess 
+
+              (improve guess x)))
+
+      0.001))
+#+END_SRC
+
+这个是可以正常工作的
+
+*** 1.8
+#+BEGIN_SRC scheme
+  (define (cube x) 
+      (* x x x))
+  (define (improve guess x)
+      (/ 3
+          (+ (/ x
+              (square guess))
+      (* 2 y))))
+#+END_SRC
+** 1.2 过程与产生它们的计算
+*** 1.9
+     :PROPERTIES:
+     :CUSTOM_ID: section
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (+ a b)
+     (if (= a 0)
+         b
+        (inc (+ (dec a) b))))
+  (define (+ a b)
+      (if (= a 0)
+          b
+          (+ (dec a) (inc b))))
+#+END_SRC
+
+*** 1.10
+     :PROPERTIES:
+     :CUSTOM_ID: section-1
+     :END:
+
+#+BEGIN_SRC scheme
+  ; Ackermann
+
+  (define (A x y)
+      (cond ((= y 0) 0)
+                 ((= x 0) (* 2 y))
+                 ((= y 1) 2)
+                 (else (A (- x 1)
+                               (A x (- y 1))))))
+
+  ; (A 1 10) = 2^10
+  ; (A 2 4) = 65536
+  ; (A 3 3) = 65536
+
+  (define (f n) (A 0 n)) = 2*n
+  (define (g n) (A 1 n)) = 2^n
+  (define (h n) (A 2 n)) = 2^2^2^…2(n个2)
+#+END_SRC
+
+*** 1.11
+     :PROPERTIES:
+     :CUSTOM_ID: section-2
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (f n)
+  (cond ((< n 3) n)
+  (else (+ (f (- n 1))
+  (* 2 (f (- n 2)))
+  (* 3 (f (- n 3)))))))
+
+  (define (f-iter a b c n)
+  (cond ((= n 0) c)
+  ((= n 1) b)
+  ((= n 2) a)
+  (else (f-iter (+ a
+  (* 2 b)
+  (* 3 c)
+  ) a b (- n 1)))))
+  (define (f n)
+  (f-iter 2 1 0 n))
+#+END_SRC
+
+*** 1.12
+     :PROPERTIES:
+     :CUSTOM_ID: section-3
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (pascal row col)
+      (cond ((or (= row col) (= col 1)) 1)
+            (else (+ (pascal (- row 1) (- col 1))
+                    (pascal (- row 1) col)))))
+#+END_SRC
+
+*** 1.13
+     :PROPERTIES:
+     :CUSTOM_ID: section-4
+     :END:
+
+$$n = 0, F(0) = 0, n = 1, F(1) = 1$$
+
+$$if\  F(k) = \frac{\phi^k - \psi^k}{\sqrt{5}}, F(k+1) = \frac{\phi^{k+1} - \psi^{k+1}}{\sqrt{5}},$$
+
+$$then\ F(k+2) = F(k) + F(k+1) = \frac{\phi^{k+2} - \psi^{k+2}}{\sqrt{5}}$$
+
+$$\left|\frac{\psi}{\sqrt{5}}\right| \lt \frac{1}{2}, \left|\frac{\psi^n}{\sqrt{5}}\right| \lt \frac{1}{2}$$
+
+$$so\  \left|F(n) - \frac{\phi^n}{\sqrt{5}} \right| \lt \frac{1}{2}$$
+
+*** 1.14
+     :PROPERTIES:
+     :CUSTOM_ID: section-5
+     :END:
+
+空间 $$\Theta(n)$$, 时间 $$\Theta(n^n)$$
+
+*** 1.15
+     :PROPERTIES:
+     :CUSTOM_ID: section-6
+     :END:
+
+1) 调用了5次
+
+B）空间和时间复杂度都是 $$\Theta(logn)$$
+
+*** 1.16
+     :PROPERTIES:
+     :CUSTOM_ID: section-7
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (square a) (* a a))
+  (define (even? n) (= (remainder n 2) 0))
+  (define (pow-iter a b n)
+      (cond ((= n 0) a)
+            ((even? n) (pow-iter a
+                      (square b) (/ n 2)))
+            (else (pow-iter (* b a) b (- n 1)))))
+  (define (pow b n) (pow-iter 1 b n))
+#+END_SRC
+
+*** 1.17
+     :PROPERTIES:
+     :CUSTOM_ID: section-8
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (double a) (+ a a))
+  (define (halve a) (/ a 2))
+  (define (even? n) (= (remainder n 2) 0))
+  (define (fast-multi a b)
+      (cond ((= b 0) 0)
+            ((even? b) (double (fast-multi a (halve b))))
+            (else (+ a (fast-multi a (- b 1))))))
+#+END_SRC
+
+*** 1.18
+     :PROPERTIES:
+     :CUSTOM_ID: section-9
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (double a) (+ a a))
+  (define (halve a) (/ a 2))
+  (define (even? n) (= (remainder n 2) 0))
+  (define (multi-iter a b n)
+      (cond ((= b 0) n)
+            ((even? b) (multi-iter (double a) (halve b) n))
+            (else (multi-iter a (- b 1) (+ a n)))))
+  (define (multi a b) (multi-iter a b 0))
+#+END_SRC
+
+*** 1.19
+     :PROPERTIES:
+     :CUSTOM_ID: section-10
+     :END:
+
+For some calculation, $$p \rightarrow q^2+p^2, q \rightarrow q^2 + 2pq$$
+
+*** 1.20
+     :PROPERTIES:
+     :CUSTOM_ID: section-11
+     :END:
+
+正则序的调用remainder次数非常多，由于递归深度加深，每次判断if语句都要调用递归深度的remainder，因此造成了极大的浪费。而应用序则只需要递归深度的remainder调用。
+
+*** 1.21
+     :PROPERTIES:
+     :CUSTOM_ID: section-12
+     :END:
+
+(smallest-divisior 199) = 199
+
+(smallest-divisior 1999) = 19999
+
+(Smallest-divisior 19999) = 7
+
+*** 1.22
+     :PROPERTIES:
+     :CUSTOM_ID: section-13
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (search-for-primes n number)
+      (cond ((= number 0) (display " end "))
+            ((prime? n) (newline) (display n) (search-for-primes (+ n 2) (- number 1)))
+            (else (search-for-primes (+ n 2) number))))
+  (define (timed-search n number start-time)
+      (search-for-primes n number)
+          (- (current-milliseconds) start-time))
+#+END_SRC
+
+*** 1.23
+     :PROPERTIES:
+     :CUSTOM_ID: section-14
+     :END:
+
+欧拉筛
+
+#+BEGIN_SRC scheme
+  (define (next n)
+      (if (= n 2)
+          3
+          (+ n 2)))
+#+END_SRC
+
+*** 1.24
+     :PROPERTIES:
+     :CUSTOM_ID: section-15
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (fermat-test n)
+  (define (try-it a)
+      (= (expmod a n n) a))
+          (try-it (+ 1 (random (- n 1)))))
+  (define (prime? n times)
+      (cond ((= times 0) true)
+            ((fermat-test n) (prime? n (- times 1)))
+            (else false)))
+#+END_SRC
+
+费马检查次数设定32， 将Fermat检查替换原来的筛法。进行运行
+
+分别是1ms 2ms 1ms 0ms
+
+对于复杂度给一个总结：增长阶仅仅给了我们一个粗略的估计算法优劣和复杂度的工具，实际情况还受编译器，系统资源以及数值计算的规模等因素的印象。
+
+我们的测试样例都比较小，实际上，在更大的规模时候，我们会发现复杂度更低的算法一定会体现出优势的。
+
+我的理解：*增长阶是复杂度的一个有效抽象*。
+
+*** 1.25
+     :PROPERTIES:
+     :CUSTOM_ID: section-16
+     :END:
+
+不可以，经过fast-expt计算出的数字十分之大，这是在增加复杂度，甚至会使得数字太大造成溢出。
+
+*** 1.26
+     :PROPERTIES:
+     :CUSTOM_ID: section-17
+     :END:
+
+我们发现乘法的两项都调用了递归，这就相当于计算了一个树形递归，它的复杂度就变成了普通乘幂的复杂度，也就是
+
+$$\Theta(n)$$了。
+
+*** 1.27
+     :PROPERTIES:
+     :CUSTOM_ID: section-18
+     :END:
+
+(prime? 561 128)
+
+(prime? 6601 128)
+
+(prime? 1729 128)
+
+即使次数128都会被骗过，这个概率是1-1/2^128了。
+
+*** 1.28
+     :PROPERTIES:
+     :CUSTOM_ID: section-19
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (expmod base exp m)
+      (cond ((= exp 0) 1)
+            ((miller-rabin? base n) 0)
+            ((even? exp) (remainder (square (expmod base (/ exp 2) m)) m))
+            (else (remainder (* base (expmod base (- exp 1) m)) m))))
+  (define (miller-rabin? a n)
+      (cond ((= a 1) 0)
+            ((= a (- n 1) 0))
+            ((= (remainder (square a) n) 1) 1)
+            (else 0)))
+  (define (fermat-test n)
+  (define (try-it a)
+      (= (expmod a (- n 1) n) a))
+          (try-it (+ 1 (random (- n 1)))))
+  (define (prime? n times)
+      (cond ((= times 0) true)
+            ((fermat-test n) (prime? n (- times 1)))
+            (else false)))
+#+END_SRC
+
+再次检测Carmichael数，都死了（然而Miller-Rabin素性判定也需要至少n/2次才能保证正确性。
+
+
+** 1.3 用高阶函数做抽象
+   :PROPERTIES:
+   :CUSTOM_ID: 用高阶函数做抽象
+   :END:
+
+*** 1.29
+     :PROPERTIES:
+     :CUSTOM_ID: section
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (next k)
+      (+ k 1))
+  (define (even? n)
+      (= (remainder n 2) 0))
+  (define (sum term a next b)
+      (if (> a b)
+          0
+          (+ (term a)
+              (sum term (next a) next b))))
+  (define (intergral f a b n)
+      (define h (/ (- b a) n))
+      (define (y k)
+          (f (+ a (* k h))))
+      (define (factor k)
+          (cond ((or (= k 0) (= k n)) 1)
+              ((even? k) 2)
+              (else 4)))
+      (define (term k)
+          (* (y k)
+              (factor k)))
+      (if (not (even? n))
+          (display "error")
+          (* (/ h 3)
+      (sum term 0 next n))))
+#+END_SRC
+
+可以看到，辛普森积分在n=100的时候已经逼近精确解了
+
+*** 1.30
+     :PROPERTIES:
+     :CUSTOM_ID: section-1
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (sum term a next b)
+      (define (iter a result)
+          (if (> a b)
+              result
+              (iter (next a) (+ (term a)
+                              result))))
+      (iter a 0))
+#+END_SRC
+
+*** 1.31
+     :PROPERTIES:
+     :CUSTOM_ID: section-2
+     :END:
+
+#+BEGIN_SRC scheme
+  ; A)
+  (define (square x) (* x x))
+  (define (inc a) (+ a 1))
+  (define (product term a next b)
+      (if (> a b)
+          1
+          (* (term a)
+              (product term (next a) next b))))
+  (define (id x) x)
+  (define (fac x)
+      (product id 1 inc x))
+  (define (even-pi n)
+      (cond ((= n 2) n)
+            (else (square n))))
+  (define (plustwo n) (+ n 2))
+  (define pi
+      (* 4
+          (/ (* 2 (product square 4 plustwo 20))
+              (* 20 (product square 3 plustwo 19)))))
+  ; B)
+  (define (product term a next b)
+      (define iter a result)
+          (if (> a b)
+              result
+              (iter (next a) (* (term a) result)))
+      (iter a 1))
+#+END_SRC
+
+*** 1.32
+     :PROPERTIES:
+     :CUSTOM_ID: section-3
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (accumulate combiner null-value term a next b)
+      (if (> a b)
+          null-value
+          (combiner (term a)
+              (accumulate combiner null-value term (next a) next b))))
+
+  (define (accumulate combiner null-value term a next b)
+      (define (iter a result)
+          (if (> a b)
+              result
+              (iter (next a) (combiner (term a) result))))
+      (iter a null-value))
+#+END_SRC
+
+*** 1.33
+     :PROPERTIES:
+     :CUSTOM_ID: section-4
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (filtered-accumulate combiner null-value term a next b filter)
+      (define (iter a result)
+          (cond (> a b) result
+                ((filter (term a)) (iter (next a) (combiner (term a) result)))
+                (else (iter (next a) result))))
+      (iter a null-value))
+  (filtered-accumulate + 0 id a inc b prime?)
+  (filtered-accumulate * 1 1 inc (- n 1) gcd?)
+  (define (gcd? a)
+      (cond ((= (gcd a n) 1) #t)
+            (else #f)))
+#+END_SRC
+
+*** 1.34
+     :PROPERTIES:
+     :CUSTOM_ID: section-5
+     :END:
+
+按照Lisp的应用序求值，我们会发现它在求参数的值的时候发现这个过程缺少参数。这边我们会发现Lisp在传入过程参数时使用的是匿名函数。
+
+*** 1.35
+     :PROPERTIES:
+     :CUSTOM_ID: section-6
+     :END:
+
+$$f(x) = 1 + \frac{1}{x} = x, x_1 = \phi, x_2 = \psi$$
+
+*** 1.36
+     :PROPERTIES:
+     :CUSTOM_ID: section-7
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (fixed-point f first-guess)
+      (define (close-enough? v1 v2)
+          (< (abs (- v1 v2))
+          tolerance))
+      (define (try guess)
+          (display guess)
+          (newline)
+          (let ((next (f guess)))
+              (if (close-enough? guess next)
+                  next
+                  (try next))))
+      (try first-guess))
+  (define (averge-dump f) (lambda (x) (averge x (f x))))
+  (define (averge a b)
+      (/ (+ a b) 2))
+  (fixed-point (averge-dump (lambda (x) (/ (log 1000) (log x)))) 2.0)
+#+END_SRC
+
+平均阻尼法比单纯寻找不动点快了许多
+
+*** 1.37
+     :PROPERTIES:
+     :CUSTOM_ID: section-8
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (cont-frac n d k)
+      (define (rec i)
+          (if (= k i)
+              (/ (n i) (d i))
+              (/ (n i)
+                  (+ (d i) (rec (+ i 1))))))
+      (rec 1))
+
+  (define (cont-frac n d k)
+      (define (iter i result)
+          (if (= 0 i)
+              result
+              (iter (- i 1) (/ (n i) (+ (d i) result)))))
+      (iter (- k 1) (/ (n k) (d k))))
+#+END_SRC
+
+*** 1.38
+     :PROPERTIES:
+     :CUSTOM_ID: section-9
+     :END:
+
+#+BEGIN_SRC scheme
+  (cont-frac 
+      (lambda (i) 1.0) 
+          (lambda (i) (cond ((= (remainder i 3) 2) (* 2 (/ (+ i 1) 3)))
+                            (else 1))) 1000)
+#+END_SRC
+
+*** 1.39
+     :PROPERTIES:
+     :CUSTOM_ID: section-10
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (tan-cf x k)
+      (define (d i)
+          (- (* 2 i) 1))
+      (define (rec i)
+          (define (n x)
+              (cond ((= i 1) x)
+                    (else (* x x))))
+          (if (= k i)
+              (/ (n x) (d i))
+              (/ (n x) (- (d i) (rec (+ i 1))))))
+      (rec 1))
+  (tan-cf (/ 3.1415926 4) 100)
+#+END_SRC
+
+*** 1.40
+     :PROPERTIES:
+     :CUSTOM_ID: section-11
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (cubic a b c)
+      (lambda (x) (+ (cube x) (* (square x) a) (* x b) c)))
+#+END_SRC
+
+*** 1.41
+     :PROPERTIES:
+     :CUSTOM_ID: section-12
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (double f)
+      (lambda (x) (f (f x))))
+  (define (inc a) (+ a 1))
+  (((double (double double)) inc) 5)
+  ; 21
+#+END_SRC
+
+*** 1.42
+     :PROPERTIES:
+     :CUSTOM_ID: section-13
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (compose f g)
+      (lambda (x) (f (g x))))
+#+END_SRC
+
+*** 1.43
+     :PROPERTIES:
+     :CUSTOM_ID: section-14
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (repeat f k)
+      (cond ((= k 1) f)
+            (else (compose f (repeat f (- k 1))))))
+#+END_SRC
+
+*** 1.44
+     :PROPERTIES:
+     :CUSTOM_ID: section-15
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (smooth f)
+      (lambda (x) (/ (+ (f (- x dx)) (f x) (f (+ x dx))) 3)))
+  (define (n-smooth f n)
+      ((repeat smooth n) f))
+#+END_SRC
+
+*** 1.45
+     :PROPERTIES:
+     :CUSTOM_ID: section-16
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (n-rank-root x n)
+      (define (average-dump f)
+          (lambda (x) (/ (+ x (f x)) 2)))
+      (define (expt a b)
+          (if (= b 1)
+              a
+              (* a (rk a (- b 1)))))
+      (let ((k (lg n)))
+          (fixed-point (repeat (average-dump (lambda (x) (/ x (expt y (- n 1))))) k) 1.0)))
+#+END_SRC
+
+*** 1.46
+     :PROPERTIES:
+     :CUSTOM_ID: section-17
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (iterative-improve good-enough? improve)
+      (lambda (guess)
+          (define (try x)
+              (let ((next (improve x)))
+                  (if (good-enough? next x)
+                      next
+                      (try next))))
+          (try guess)))
+#+END_SRC
+* CH2
+** 2.1 数据抽象导引
+   :PROPERTIES:
+   :CUSTOM_ID: 数据抽象导引
+   :END:
+
+*** 2.1
+     :PROPERTIES:
+     :CUSTOM_ID: section
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (make-rat a b)
+      (define (minimize-rat x y) 
+          (let ((g (gcd x y)))
+              (cons x y)))
+      (cond ((< b 0) (minimize-rat (- a) (- b)))
+            ((= b 0) (display "error: denom can't be zero."))
+            (else (minimize-rat a b))))
+#+END_SRC
+
+*** 2.2
+     :PROPERTIES:
+     :CUSTOM_ID: section-1
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (make-point x y) (cons x y))
+  (define (x-point p) (car p))
+  (define (y-point p) (cdr p))
+  (define (display-point p)
+      (newline)
+      (display "(" (x-point p) "," (y-point p) ")"))
+  (define (make-segment a b c d)
+      (let ((x (make-point a b))
+            (y (make-point c d)))
+          (cons x y)))
+  (define (start-point l) (car l))
+  (define (end-point l) (cdr l))
+  (define (mid-point l)
+      (make-point (average (x-point (start-point l)) (x-point (end-point l))) 
+                  (average (y-point (start-point l)) (y-point (end-point l)))))
+#+END_SRC
+
+*** 2.3
+     :PROPERTIES:
+     :CUSTOM_ID: section-2
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (make-rectangle l1 l2)
+      (cons l1 l2))
+  (define (rec-circ m)
+      (* 2 (+ (width m)
+          (height m))))
+  (define (rec-area m)
+      (* (width m)
+          (height m)))
+  (define (width m) (segment-length (cdr m)))
+  (define (height m) (segment-length (car m)))
+  (define (segment-length l)
+      (sqrt (+ (square (- (x-point (start-point l))
+                          (x-point (end-point l))))
+              (square (- (y-point (start-point l))
+                          (y-point (end-point l)))))))
+
+  (define (width m) 
+      (segment-length (make-segment (x-point (start-point (car m))) 
+                                      (y-point (start-point (car m)))
+                                  (x-point (start-point (cdr m)))
+                                  (y-point (start-point (cdr m))))))
+#+END_SRC
+
+考虑第一种方式：使用两条同起点的互相垂直线段做参数，抽象屏障为width和height对area和circ的封闭
+
+第二种方式：同方向的两个平行向量，只需修改width函数即可。
+
+*** 2.4
+     :PROPERTIES:
+     :CUSTOM_ID: section-3
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (cdr z)
+      (z (lambda (p q) q)))
+#+END_SRC
+
+*** 2.5
+     :PROPERTIES:
+     :CUSTOM_ID: section-4
+     :END:
+
+对任意的A和n，我们都有A^n > 0,同时，指数函数对数域的算术运算封闭。
+
+#+BEGIN_SRC scheme
+  (define (cons a b)
+      (* (expt 2 a)
+          (expt 3 b)))
+  (define (car z)
+      (define (iter z result)
+          (if (not (= (remainder z 2) 0))
+              result
+              (iter (/ z 2) (+ result 1))))
+      (iter z 0))
+  (define (cdr z)
+      (define (iter z result)
+          (if (not (= (remainder z 3) 0))
+              result
+              (iter (/ z 3) (+ result 1))))
+      (iter z 0))
+#+END_SRC
+
+*** 2.6
+     :PROPERTIES:
+     :CUSTOM_ID: section-5
+     :END:
+
+#+BEGIN_SRC scheme
+  (define one (lambda (f) (lambda (x) (f x))))
+  (define two (lambda (f) (lambda (x) (f (f x)))))
+  (define (add a b)
+      (lambda (f) (lambda (x) ((b f) ((a f) x)))))
+#+END_SRC
+
+参见Lambda演算
+
+*** 2.7
+     :PROPERTIES:
+     :CUSTOM_ID: section-6
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (lower-bound inter) (min (car inter) (cdr inter)))
+  (define (upper-bound inter) (max (car inter) (cdr inter)))
+#+END_SRC
+
+实际上可能按照书上的用意是不需要进行一次比较的，但是为了规范化还是写了上去
+
+*** 2.8
+     :PROPERTIES:
+     :CUSTOM_ID: section-7
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (sub-interval x y)
+      (add-interval x
+          (make-interval (- (upper-bound y)) (- (lower-bound y)))))
+#+END_SRC
+
+*** 2.9
+     :PROPERTIES:
+     :CUSTOM_ID: section-8
+     :END:
+
+由于乘除多了一个选择过程，因此并没有一个确定的从原上下界得到的公式，所以宽度和原宽度也是不关联的，如int1=（-2.43
+1.56）int2=（3.44 5.67）和 int1=（1.33 4.87） int2=（-8.76 -5.71）
+而加减的证明也是很简单的。
+
+*** 2.10
+     :PROPERTIES:
+     :CUSTOM_ID: section-9
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (zero-check? int)
+      (cond ((and (< (lower-bound int) 0) (> (upper-bound int) 0)) 1)
+            ((or (= (lower-bound int) 0) (= (upper-bound int) 0)) 1)
+            (else 0)))
+  (define (div-interval x y)
+      (if (= (zero-check? y) 1)
+          (display "Error:Interval contains zero.")
+          (mul-interval x
+                      (make-interval (/ 1.0 (upper-bound y))
+                                      (/ 1.0 (lower-bound y))))))
+#+END_SRC
+
+*** 2.11
+     :PROPERTIES:
+     :CUSTOM_ID: section-10
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (mul-interval x y)
+      (let ((a (lower-bound x))
+          (b (upper-bound x))
+          (c (lower-bound y))
+          (d (upper-bound y)))
+      (cond ((and (> b 0) (< c 0) (> d 0)) (make-interval (* b c) (* b d)))
+            ((and (and (> a 0) (> c 0))
+                  (and (< b 0) (< d 0))) (make-interval (* a c) (* b d)))
+            ((and (> b 0) (< d 0)) (make-interval (* b c) (* a d)))
+            ((and (< a 0) (> b 0) (> c 0)) (make-interval (* a d) (* b d)))
+            ((and (< b 0) (> c 0)) (make-interval (* a d) (* b c)))
+            ((and (< b 0) (< c 0) (> d 0)) (make-interval (* a d) (* a c))))))
+#+END_SRC
+
+*** 2.12
+     :PROPERTIES:
+     :CUSTOM_ID: section-11
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (percent i)
+      (* (/ (width i) (center i)) 100))
+#+END_SRC
+
+*** 2.13
+     :PROPERTIES:
+     :CUSTOM_ID: section-12
+     :END:
+
+#+BEGIN_SRC scheme
+  int1 = (a , b) = (a - ab , a + ab) int2 = (c , d) = (c - cd , c + cd)
+  int3 = int1 * int2 = (ac - acd - abc + abcd , ac + abc + acd + abcd)
+  width(int3) = ac(b + d)
+  mid(int3) = ac(bd + 1)
+  percent(int3) = b + d / (bd + 1)
+#+END_SRC
+
+*** 2.14
+     :PROPERTIES:
+     :CUSTOM_ID: section-13
+     :END:
+
+使用以下数据做测试：
+
+#+BEGIN_SRC scheme
+  (define int1 (make-interval 4.5 0.1))
+  (define int2 (make-interval 3.8 0.05))
+#+END_SRC
+
+得到结果：
+
+#+BEGIN_SRC scheme
+  (2.0555666173071367 . 2.064924586428089)
+  (2.058739094000193 . 2.0617425780121357)
+#+END_SRC
+
+可以看出是不一致的， 我们来试试A/A 和A/B
+
+得到结果：
+
+#+BEGIN_SRC scheme
+  (0.9980019980019979 . 1.0020020020020022)
+  (1.1824350982403533 . 1.1859877303074589)
+#+END_SRC
+
+查看一下结果的百分比：
+
+#+BEGIN_SRC scheme
+  0.19999980000021655
+  0.14999992500004136
+#+END_SRC
+
+可以看到会更加大一些，我们拿多组数据进行测试，发现A/A的百分误差为2*A
+
+A/B的误差为A+B，而B+A的误差也是A+B
+
+然而根据推到A/A的误差应该为2*A /（ A
+*A+1），可见由于A特别小，近似等于了2*A。
+
+所以第一个计算电阻方式的误差应该会是（b+d）+（ab+cd）/（a+c）
+
+第二个是 (bc+ad）/（a+c），显然要小很多。
+
+*** 2.15
+     :PROPERTIES:
+     :CUSTOM_ID: section-14
+     :END:
+
+的确由于不确定度的计算规则，在数学上而言减少对变量的运算会是更加精确的区间，但是这个区间在工程上或者测量上显然不是更加好的置信区间，因为它会引进一个（1±0）的精确区间。我们应该算出更大的误差区间才是较好的。
+
+*** 2.16
+     :PROPERTIES:
+     :CUSTOM_ID: section-15
+     :END:
+
+我已经在2.14阐述过了这个一般问题。显然，引入更多的区间运算意味着更多的误差，这是不可避免的。
+
+如何设计一个包来弥补这样的缺陷呢？
+
+//补：暂时上我认为，这是一个不可解的问题。
+
+//2019.10.6
+研究形式化证明以后。我认识到只需要制定一套与IEEE754不同的浮点数系统，就可以在某种程度上减少这个误差，我们需要形式化的证明两个实数的相等性，也就是，使用一个equality的dependent
+type。
+
+** 2.2 层次性数据和闭包性质
+   :PROPERTIES:
+   :CUSTOM_ID: 层次性数据和闭包性质
+   :END:
+
+*** 2.17
+     :PROPERTIES:
+     :CUSTOM_ID: section
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (last-pair lis)
+      (if (null? (cdr lis))
+          (car lis)
+          (last-pair (cdr lis))))
+#+END_SRC
+
+*** 2.18
+     :PROPERTIES:
+     :CUSTOM_ID: section-1
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (reverse lis)
+      (define (reverse-cons lis res)
+          (if (null? lis)
+              res
+              (reverse-cons (cdr lis) (cons (car lis) res))))
+      (reverse-cons lis `()))
+#+END_SRC
+
+*** 2.19
+     :PROPERTIES:
+     :CUSTOM_ID: section-2
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (cc amount coin-values)
+      (define (no-more? coin-values)
+          (if (null? coin-values) #t #f))
+      (define (except-first-denomination coin-values)
+          (cdr coin-values))
+      (define (first-denomination coin-values)
+          (car coin-values))
+      (cond ((= amount 0) 1)
+            ((or (< amount 0) (no-more? coin-values)) 0)
+            (else (+ (cc amount
+                      (except-first-denomination coin-values))
+                      (cc (- amount
+                      (first-denomination coin-values))
+                      coin-values)))))
+#+END_SRC
+
+不会有影响，因为在总价固定的情况下，换得零钱的顺序是不影响方案数的。
+
+*** 2.20
+     :PROPERTIES:
+     :CUSTOM_ID: section-3
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (filtered-accumulate-list combiner term lis filter)
+      (define (iter lis result)
+          (cond ((null? lis) result)
+                ((filter (term (car lis))) (iter (cdr lis) (combiner (term (car lis)) result)))
+                (else (iter (cdr lis) result))))
+      (iter lis `()))
+  (define (same-parity x . res)
+      (define (is-same-parity? x)
+          (lambda (a) (= (remainder a 2) (remainder x 2))))
+      (reverse (filtered-accumulate-list cons id (cons x res) (is-same-parity? x))))
+#+END_SRC
+
+改写了一个对表的过滤器和累积后，形式就优美了很多
+
+*** 2.21
+     :PROPERTIES:
+     :CUSTOM_ID: section-4
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (square-list items)
+      (if (null? items)
+          nil
+          (cons (* (car items) (car items))
+              (square (cdr items)))))
+  (define (square-list items)
+      (map square items))
+#+END_SRC
+
+*** 2.22
+     :PROPERTIES:
+     :CUSTOM_ID: section-5
+     :END:
+
+因为在迭代result的时候，每一项新的项都被组合到了前面的位置。
+
+而交换了顺序以后，nil被放置到了前面，显然这并不会构成一个表，而只是一个表结构。
+
+*** 2.23
+     :PROPERTIES:
+     :CUSTOM_ID: section-6
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (for-each proc lis)
+      (if (null? lis)
+          #t
+          (and (proc (car lis)) (for-each proc (cdr lis)))))
+  ; 迭代检查
+  ; 还有一种直接扔掉的实现是
+  (define (for-each pro lis)
+      (if (not (null? lis))
+          ((proc (car lis)) (for-each proc (cdr lis)))))
+#+END_SRC
+
+*** 2.24
+     :PROPERTIES:
+     :CUSTOM_ID: section-7
+     :END:
+
+解释器打印出来的是
+
+(1 (2 (3 4)))
+
+*** 2.25
+     :PROPERTIES:
+     :CUSTOM_ID: section-8
+     :END:
+
+1）cadaddr 2）caar 3）cadadadadadadr
+
+*** 2.26
+     :PROPERTIES:
+     :CUSTOM_ID: section-9
+     :END:
+
+1. (1 2 3 4 5 6)
+2. ((1 2 3) 4 5 6)
+3. ((1 2 3) (4 5 6))
+
+*** 2.27
+     :PROPERTIES:
+     :CUSTOM_ID: section-10
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (reverse-tree tree)
+      (define (iter tree res)
+          (cond ((null? tree) res)
+                (else (iter (cdr tree)
+                      (cons (if (pair? (car tree))
+                              (reverse-tree (car tree))
+                              (car tree)) res)))))
+      (iter tree `()))
+#+END_SRC
+
+*** 2.28
+     :PROPERTIES:
+     :CUSTOM_ID: section-11
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (fringe tree)
+      (cond ((null? tree) `())
+            ((not (pair? tree)) (list tree))
+            (else (append (fringe (car tree)) (fringe (cdr tree))))))
+#+END_SRC
+
+*** 2.29
+     :PROPERTIES:
+     :CUSTOM_ID: section-12
+     :END:
+
+#+BEGIN_SRC scheme
+  ; A)
+  (define (left-branch mobile)
+      (car mobile))
+  (define (right-branch mobile)
+      (car (cdr mobile)))
+  (define (branch-length branch)
+      (car branch))
+  (define (branch-structure branch)
+      (car (cdr branch)))
+
+  ; B)
+  (define (total-weight mobile)
+      (define (branch-check branch)
+          (cond ((null? branch) 0)
+                ((not (pair? (branch-structure branch))) (branch-structure branch))
+                (else (total-weight (branch-structure branch)))))
+      (cond ((null? mobile) 0)
+            ((not (pair? mobile)) mobile)
+            (else (+ (branch-check (left-branch mobile))
+                      (branch-check (right-branch mobile))))))
+
+  ; C)
+  (define (balanced? mobile)
+      (cond ((null? mobile) #t)
+            ((not (pair? mobile) ) #t)
+            (else 
+              (let ((left-structure (branch-structure (left-branch mobile)))
+                    (right-structure (branch-structure (right-branch mobile)))
+                    (left-length (branch-length (left-branch mobile)))
+                    (right-length (branch-length (right-branch mobile))))
+                  (and (balanced? left-structure) (balanced? right-structure)
+                      (= (* left-length (total-weight left-structure))
+                          (* right-length (total-weight right-structure))))))))
+  ; D)
+  ; 只需要修改选择函数
+  (define (left-branch mobile)
+      (car mobile))
+  (define (right-branch mobile)
+      (cdr mobile))
+  (define (branch-length branch)
+      (car branch))
+  (define (branch-structure branch)
+      (cdr branch))
+  ; 这再次证明了抽象屏障的强大
+#+END_SRC
+
+*** 2.30
+     :PROPERTIES:
+     :CUSTOM_ID: section-13
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (square-tree tree)
+      (cond ((null? tree) `())
+            ((not (pair? tree)) (* tree tree))
+            (else (cons (square-tree (car tree))
+                        (square-tree (cdr tree))))))
+  (define (square-tree-map tree)
+      (map (lambda (sub-tree)
+              (if (pair? sub-tree)
+                  (square-tree-map sub-tree)
+                  (* sub-tree sub-tree)))
+          tree))
+#+END_SRC
+
+*** 2.31
+     :PROPERTIES:
+     :CUSTOM_ID: section-14
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (tree-map f tree)
+      (map (lambda (sub-tree) 
+          (if (pair? sub-tree)
+              (tree-map f sub-tree)
+              (f sub-tree)))
+          tree))
+#+END_SRC
+
+*** 2.32
+     :PROPERTIES:
+     :CUSTOM_ID: section-15
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (subsets s)
+      (if (null? s)
+          (list `())
+          (let ((rest (subsets (cdr s))))
+              (append rest (map (lambda (res) (cons (car s) res)) rest)))))
+#+END_SRC
+
+这边有一个深刻的教训，`()始终只是一个值而不是列表，所以必须写(list `())
+
+这个原理非常简单，就是对后续处理完毕的子集添加当前元素生成多个新子集，且根据无后效性的递归，必定不存在重复，复杂度应该是$$\Theta(2^n)$$
+
+*** 2.33
+     :PROPERTIES:
+     :CUSTOM_ID: section-16
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (map p seq)
+      (accumulate (lambda (x y) (cons (p x) y)) `() seq))
+  (define (append seq1 seq2)
+      (accumulate cons seq2 seq1))
+  (define (length seq)
+      (accumulate (lambda (x y) (+ 1 y)) 0 seq))
+#+END_SRC
+
+*** 2.34
+     :PROPERTIES:
+     :CUSTOM_ID: section-17
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (horner-eval x coefficent-sequence)
+      (accumulate (lambda (this-coeff higher-terms) (+ this-coeff (* x higher-terms)))
+          0
+          coefficent-sequence))
+#+END_SRC
+
+*** 2.35
+     :PROPERTIES:
+     :CUSTOM_ID: section-18
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (count-leaves t)
+      (accumulate + 0 (map (lambda (x)
+          (if (not (pair? x))
+              1
+              (count-leaves x))) t)))
+#+END_SRC
+
+*** 2.36
+     :PROPERTIES:
+     :CUSTOM_ID: section-19
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (accumulate-n op init seqs)
+      (if (null? (car seqs))
+          `()
+          (cons (accumulate op init (map (lambda (x) (car x)) seqs))
+                (accumulate-n op init (map (lambda (x) (cdr x)) seqs)))))
+#+END_SRC
+
+*** 2.37
+     :PROPERTIES:
+     :CUSTOM_ID: section-20
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (dot-product v w)
+      (accumulate + 0 (map * v w)))
+  (define (martrix-*-vector m v)
+      (map (lambda (x) (dot-product x v)) m))
+  (define (transpose mat)
+      (accumulate-n cons `() mat))
+  (define (martrix-*-martrix m n)
+      (let ((cols (transpose n)))
+          (map (lambda (x) (martrix-*-vector cols x)) m)))
+#+END_SRC
+
+*** 2.38
+     :PROPERTIES:
+     :CUSTOM_ID: section-21
+     :END:
+
+3/2
+
+1/6
+
+(1(2(3 `())))
+
+(((`() 1)2)3)
+
+显然需要运算符满足交换律
+
+*** 2.39
+     :PROPERTIES:
+     :CUSTOM_ID: section-22
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (reverse sequence)
+      (fold-right (lambda (x y) (append y (list x))) `() sequence))
+  (define (reverse sequence)
+      (fold-left (lambda (x y) (cons y x)) `() sequence))
+#+END_SRC
+
+*** 2.40
+     :PROPERTIES:
+     :CUSTOM_ID: section-23
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (unique-pairs n)
+      (flatmap (lambda (i) (map (lambda (j) (list i j)) (enumurate-interval 1 (- i 1)))) (enumurate-interval 1 n)))
+  (define (prime-sum-pairs n)
+      (filter prime-sum? (unique-pairs n)))
+#+END_SRC
+
+*** 2.41
+     :PROPERTIES:
+     :CUSTOM_ID: section-24
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (unique-three-pairs n)
+      (flatmap (lambda (i) (flatmap (lambda (j) 
+          (map (lambda (k) (list i j k)) (enumurate-interval 1 (- j 1))))
+          (enumurate-interval 1 (- i 1))))
+          (enumurate-interval 1 n)))
+
+  (define (sum-three-equals-s n s)
+      (define (sum-equals-s? sequence)
+          (= (+ (car sequence)
+          (car (cdr sequence))
+              (car (cdr (cdr sequence))))
+              s))
+      (filter sum-equals-s? (unique-three-pairs n)))
+#+END_SRC
+
+*** 2.42
+     :PROPERTIES:
+     :CUSTOM_ID: section-25
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (queen board-size)
+      (define empty-board `())
+      (define (safe? k sequence)
+          (define check-seq (reverse sequence))
+          (define (iter m seq diff)
+              (if (null? seq)
+                  #t
+                  (let ((check-point (car seq)))
+                      (and (not (= check-point m))
+                          (not (= (- diff check-point) m))
+                          (not (= (+ diff check-point) m))
+                      (iter m (cdr seq) (+ diff 1))))))
+          (iter (car check-seq) (cdr check-seq) 1))
+      (define (adjoin-position row k sequence)
+          (define k-list (list row))
+          (append sequence k-list))
+      (define (queen-cols k)
+          (if (= k 0)
+              (list empty-board)
+              (filter
+                  (lambda (positions) (safe? k positions))
+                      (flatmap (lambda (rest-of-queens)
+                          (map (lambda (new-row)
+                                  (adjoin-position new-row k rest-of-queens))
+                              (enumurate-interval 1 board-size)))
+                          (queen-cols (- k 1))))))
+      (queen-cols board-size))
+#+END_SRC
+
+*** 2.43
+     :PROPERTIES:
+     :CUSTOM_ID: section-26
+     :END:
+
+在Louis的程序中，每次map操作都会带来一颗递归树的分叉，这在效益上是极大的浪费。
+
+由于每在新的一层就建立了k棵递归树
+
+估计其耗费时间为$$\Theta(n^2T)$$.
+
+*** 2.44
+     :PROPERTIES:
+     :CUSTOM_ID: section-27
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (up-split painter n)
+      (if (= n 0)
+          painter
+          (let ((smaller upsplit painter (- n 1)))
+              (below painter (beside smaller smaller)))))
+#+END_SRC
+
+*** 2.45
+     :PROPERTIES:
+     :CUSTOM_ID: section-28
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (split combiner spliter)
+      (lambda (painter n)
+          (if (= n 0)
+              painter
+              (let ((smaller ((split combiner spliter) painter (- n 1))))
+                  (combiner painter (spliter smaller smaller))))))
+#+END_SRC
+
+*** 2.46
+     :PROPERTIES:
+     :CUSTOM_ID: section-29
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (make-vect x y)
+      (cons x y))
+  (define (xcor-vect vect)
+      (car vect))
+  (define (ycor-vect vect)
+      (cdr vect))
+  (define (add-vect vec1 vec2)
+      (make-vect (+ (xcor-vect vec1) (xcor-vect vec2))
+                  (+ (ycor-vect vec1) (ycor-vect vec2))))
+  (define (sub-vect vec1 vec2)
+      (make-vect (- (xcor-vect vec1) (xcor-vect vec2))
+                  (- (ycor-vect vec1) (ycor-vect vec2))))
+  (define (scale-vect s vect)
+      (make-vect (* s (xcor-vect vect)) (* s (ycor-vect vect))))
+#+END_SRC
+
+*** 2.47
+     :PROPERTIES:
+     :CUSTOM_ID: section-30
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (make-frame origin edge1 edge2)
+      (list origin edge1 edge2))
+  (define (origin-frame frame)
+      (car frame))
+  (define (edge1-frame frame)
+      (car (cdr frame)))
+  (define (edge2-frame frame)
+      (car (cdr (cdr frame))))
+  (define (make-frame origin edge1 edge2)
+      (cons origin (cons edge1 edge2)))
+  (define (origin-frame frame)
+      (car frame))
+  (define (edge1-frame frame)
+      (car (cdr frame)))
+  (define (edge2-frame frame)
+      (cdr (cdr frame)))
+#+END_SRC
+
+*** 2.48
+     :PROPERTIES:
+     :CUSTOM_ID: section-31
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (make-segment start end)
+      (cons start end))
+  (define (start-segment segment)
+      (car segment))
+  (define (end-segment segment)
+      (cdr segment))
+#+END_SRC
+
+*** 2.49
+     :PROPERTIES:
+     :CUSTOM_ID: section-32
+     :END:
+
+#+BEGIN_SRC scheme
+  (define box-painter (segment->painter (list
+      (make-segment (make-vect 0 0) (make-vect 0 1))
+      (make-segment (make-vect 0 1) (make-vect 1 1))
+      (make-segment (make-vect 1 1) (make-vect 1 0))
+      (make-segment (make-vect 1 0) (make-vect 0 0)))))
+  (define xrow-painter (segment->painter (list
+      (make-segment (make-vect 0 0) (make-vect 1 1))
+      (make-segment (make-vect 1 0) (make-vect 0 1)))))
+  (define rhombus-painter (segment->painter (list
+      (make-segment (make-vect 0 0.5) (make-vect 0.5 1))
+      (make-segment (make-vect 0.5 1) (make-vect 1 0.5))
+      (make-segment (make-vect 1 0.5) (make-vect 0.5 0))
+      (make-segment (make-vect 0.5 0) (make-vect 0 0.5)))))
+#+END_SRC
+
+wave的代码过于硬核，就不画了
+
+*** 2.50
+     :PROPERTIES:
+     :CUSTOM_ID: section-33
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (flip-horiz painter)
+      (transform painter
+          (make-vect 1.0 0.0)
+          (make-vect 0.0 0.0)
+          (make-vect 1.0 1.0)))
+  (define (rotate180 painter)
+      (transform painter
+          (make-vect 1.0 1.0)
+          (make-vect 1.0 0.0)
+          (make-vect 0.0 1.0)))
+  (define (rotate270 painter)
+      (transform painter
+          (make-vect 0.0 1.0)
+          (make-vect 1.0 1.0)
+          (make-vect 0.0 0.0)))
+#+END_SRC
+
+*** 2.51
+     :PROPERTIES:
+     :CUSTOM_ID: section-34
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (below painter1 painter2)
+      (let ((split-point (make-vect 0.0 0.5)))
+          (let ((painter-below
+                  (transform painter1
+                      (make-vect 0.0 0.0)
+                      (make-vect 1.0 0.0)
+                      split-point))
+                (painter-up
+                  (transform painter2
+                      split-point
+                      (make-vect 1.0 0.5)
+                      (make-vect 0.0 1.0))))
+              (lambda (frame)
+                  (painter-below frame)
+                  (painter-up frame)))))
+  (define (below painter1 painter2)
+      (rotate90 (beside (rotate270 painter1) (rotate270 painter2))))
+#+END_SRC
+
+*** 2.52
+     :PROPERTIES:
+     :CUSTOM_ID: section-35
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (corner-split painter n)
+      (if (= n 0)
+          painter
+          (let ((up (up-split painter (- n 1)))
+               (right (right-split painter (- n 1))))
+              (beside (below painter up)
+              (below right (corner-split painter (- n 1)))))))
+  (define (square-limit painter n)
+      (let ((quarter (flip-horiz (corner-split painter (- n 1)))))
+          (let ((half (beside (flip-horiz quarter) quarter)))
+              (below (flip-vert half) half))))
+#+END_SRC
+** 2.3 符号数据
+   :PROPERTIES:
+   :CUSTOM_ID: 符号数据
+   :END:
+
+*** 2.53
+     :PROPERTIES:
+     :CUSTOM_ID: section
+     :END:
+
+#+BEGIN_SRC scheme
+  (list `a `b `c) ;(a b c)
+  (list (list `george)) ;((george))
+  (cdr `((x1 x2) (y1 y2))) ;((y1 y2))
+  (car (cdr `((x1 x2) (y1 y2)))) ;(y1 y2)
+  (pair? (car `(a short list))) ;#f
+  (memq `red `((red shoes) (blue socks))) ;#f
+  (memq `red `(red shoes blue socks)) ;(red shoes blue socks)
+#+END_SRC
+
+*** 2.54
+     :PROPERTIES:
+     :CUSTOM_ID: section-1
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (equal? a b)
+      (cond ((and (not (pair? a)) (not (pair? b))) (eq? a b))
+            ((or (not (pair? a)) (not (pair? b))) #f)
+            (else (and (equal? (car a) (car b)) (equal? (cdr a) (cdr b))))))
+#+END_SRC
+
+*** 2.55
+     :PROPERTIES:
+     :CUSTOM_ID: section-2
+     :END:
+
+翻译成本质其实是
+
+=(car (quote (` abracadabra)))=
+
+这当然是`了
+
+*** 2.56
+     :PROPERTIES:
+     :CUSTOM_ID: section-3
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (exp? x)
+      (and (pair? x) (eq? (car x) `**)))
+  (define (base x) (car (cdr x)))
+  (define (exponent x) (car (cdr (cdr x))))
+  (define (make-exp a1 a2)
+      (cond ((=number? a2 1) a1)
+            ((=number? a2 0) 1)
+            ((and (number? a1) (number? a2)) (exp a1 a2))
+            (else (list `** a1 a2))))
+  (define (deriv expr var)
+      (cond ((number? expr) 0)
+            ((variable? expr) (if (same-variable? expr var) 1 0))
+            ((sum? expr)
+              (make-sum (deriv (addend expr) var)
+                      (deriv (augend expr) var)))
+            ((product? expr)
+              (make-sum (make-product (multiplier expr) (deriv (multiplicand expr) var))
+                        (make-product (multiplicand expr) (deriv (multiplier expr) var))))
+            ((exp? expr)
+              (make-product (exponent expr)
+                      (make-product (make-exp (base expr) (make-sum (exponent expr) (- 1)))
+                                    (deriv (base expr) var))))
+            (else 
+              (display "unknown expression type -- DERIV" exp))))
+#+END_SRC
+
+*** 2.57
+     :PROPERTIES:
+     :CUSTOM_ID: section-4
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (augend x) 
+      (if (null? (cdr (cdr (cdr x)))) 
+          (car (cdr (cdr x))) 
+          (cons `+ (cdr (cdr x)))))
+  (define (multiplicand p) 
+      (if (null? (cdr (cdr (cdr p)))) 
+          (car (cdr (cdr p))) 
+          (cons `* (cdr (cdr p)))))
+#+END_SRC
+
+*** 2.58
+     :PROPERTIES:
+     :CUSTOM_ID: section-5
+     :END:
+
+#+BEGIN_SRC scheme
+  ; A）
+  (define (make-sum a1 a2)
+      (cond ((=number? a1 0) a2)
+            ((=number? a2 0) a1)
+            ((and (number? a1) (number? a2)) (+ a1 a2))
+            (else (list a1 `+ a2))))
+  (define (make-product a1 a2)
+      (cond ((or (=number? a1 0) (=number? a2 0)) 0)
+            ((=number? a1 1) a2)
+            ((=number? a2 1) a1)
+            ((and (number? a1) (number? a2)) (* a1 a2))
+            (else (list a1 `* a2))))
+  (define (sum? exp)
+      (and (pair? exp) (eq? (car (cdr exp)) `+)))
+  (define (addend x) (car x))
+  (define (augend x)
+      (car (cdr (cdr x))))
+  (define (product? exp)
+      (and (pair? exp) (eq? (car (cdr exp)) `*)))
+  (define (multiplier p) (car p))
+  (define (multiplicand p)
+      (car (cdr (cdr p))))
+  ; B)
+  ; 失败的波兰表达式
+  (define (poland-expr expr)
+      (cond ((null? expr) `())
+            (not (pair? expr) expr)
+            ((pair? (car expr)) (list (car (cdr expr)) (car expr) (poland-expr (car (cdr (cdr expr))))))
+            (else 
+              (poland-expr (cons (list (car (cdr expr)) (car expr) (car (cdr (cdr expr))))
+                              (cdr (cdr (cdr expr))))))))
+
+  ; 详见二义性
+#+END_SRC
+
+*** 2.59
+     :PROPERTIES:
+     :CUSTOM_ID: section-6
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (union-set set1 set2)
+      (cond ((null? set1) set2)
+            ((null? set2) set1)
+            ((element-of-set? (car set1) set2)
+            (union-set (cdr set1) set2))
+            (else (cons (car set1)
+                      (union-set (cdr set1) set2)))))
+#+END_SRC
+
+*** 2.60
+     :PROPERTIES:
+     :CUSTOM_ID: section-7
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (adjoin-set x set)
+      (cons x set))
+#+END_SRC
+
+只需修改adjoin即可，这个时间效率是O(size(n)*size(m))的，随着插入元素个数的增多，交并效率会变慢，但是查询效率和插入效率会不变甚至变快，适合于大量操作和查询的场合，事实上，还可以写一个number-of-element的函数
+
+#+BEGIN_SRC scheme
+  (define (number-of-element x set)
+      (cond ((null? set) 0)
+            ((equal? x (car set)) (+ 1 (number-of-element x (cdr set))))
+            (else (number-of-element x (cdr set)))))
+#+END_SRC
+
+*** 2.61
+     :PROPERTIES:
+     :CUSTOM_ID: section-8
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (adjoin-set x set)
+      (cond ((null? set) (list x))
+            ((= x (car set)) set)
+            ((< x (car set)) (cons x set))
+            (else (cons (car set) (adjoin-set x (cdr set))))))
+#+END_SRC
+
+The function here has the same format like (element-of-set?), it joins
+the element when search it, just like optimize the search function, the
+complexity of this is $$\Theta(\frac{n}{2})$$
+
+*** 2.62
+     :PROPERTIES:
+     :CUSTOM_ID: section-9
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (union-set set1 set2)
+      (cond ((null? set1) set2)
+            ((null? set2) set1)
+            (else (let ((x1 (car set1))
+                       (x2 (car set2)))
+                      (cond ((= x1 x2) (cons x1 (union-set (cdr set1) (cdr set2))))
+                            ((< x1 x2) (cons x1 (union-set (cdr set1) set2)))
+                            (else (cons x2 (union-set set1 (cdr set2)))))))))
+#+END_SRC
+
+*** 2.63
+     :PROPERTIES:
+     :CUSTOM_ID: section-10
+     :END:
+
+1) 这两种方法都对树进行了前序遍历，因此他们的结果一定是一样的。
+
+2) 第一种方法使用了=append=来合并子树，这个复杂度是$$\Theta(n)$$的，因此它的复杂度大致是$$\Theta(n^2)$$，而第二种直接使用了=cons=，复杂度应该为$$\Theta(n)$$
+
+*** 2.64
+     :PROPERTIES:
+     :CUSTOM_ID: section-11
+     :END:
+
+由于传入的参数就是一张有序表，因此我们对它严格二分就可以构建出平衡的二叉搜索树，考虑一个序对二分，如果序对是奇数个，那么中间的数据可以作为根节点，而左右子树各拥有（n-1)/2个数据，而如果是偶数个，我们可以给左子树（n-1）/2个数据，而将剩余数据根节点和右子树，这样也是大致平衡的，递归的执行这个过程，直到只剩下0个的长度就返回。
+
+其复杂度大致是 $$\Theta(n)$$
+的。（实际上，要想构建完整的二叉平衡树，必须要遍历到完整的列表，所以复杂度不会小于
+$$\Theta(n)$$。
+
+*** 2.65
+     :PROPERTIES:
+     :CUSTOM_ID: section-12
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (intersection-tree tree1 tree2)
+      (let ((set1 (tree->list tree1))
+            (set2 (tree->list tree2)))
+          (list->tree (intersection-set set1 set2))))
+  (define (union-tree tree1 tree2)
+      (let ((set1 (tree->list tree1))
+            (set2 (tree->list tree2)))
+          (list->tree (union-set set1 set2))))
+#+END_SRC
+
+*** 2.66
+     :PROPERTIES:
+     :CUSTOM_ID: section-13
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (look-up given-key set-of-records)
+      (cond ((null? set-of-records) false)
+            ((= given-key (entry set-of-records)) (entry-set-of-records))
+            ((< given-key (entry-set-of-records)) (look-up given-key (left-branch set-of-records)))
+            (else (look-up given-key (right-branch set-of-records)))))
+#+END_SRC
+
+*** 2.67
+     :PROPERTIES:
+     :CUSTOM_ID: section-14
+     :END:
+
+照着打了一遍 答案是 （A D A B B C A）
+
+*** 2.68
+     :PROPERTIES:
+     :CUSTOM_ID: section-15
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (encode-symbol sym tree)
+      (if (leaf? tree) `()
+          (let ((left-symbol (symbols (left-branch tree)))
+                (right-symbol (symbols (right-branch tree))))
+              (cond ((element-of-set? sym left-symbol) (cons 0 (encode-symbol sym (left-branch tree))))
+                    ((element-of-set? sym right-symbol) (cons 1 (encode-symbol sym (right-branch tree))))
+                    (else (display "Not in this tree" sym))))))
+#+END_SRC
+
+*** 2.69
+     :PROPERTIES:
+     :CUSTOM_ID: section-16
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (successive-merge set)
+      (if (= (length set) 1)
+          (car set)
+          (let ((min-pair (car set))
+                (min2-pair (car (cdr set))))
+              (successive-merge (adjoin-set (make-code-tree min-pair min2-pair) (cdr (cdr set)))))))
+#+END_SRC
+
+*** 2.70
+     :PROPERTIES:
+     :CUSTOM_ID: section-17
+     :END:
+
+#+BEGIN_SRC scheme
+  (define rock-words-tree (generate-huffman-tree `((A 2) (NA 16) (BOOM 1) (SHA 3) (GET 2) (YIP 9) (JOB 2) (WAH 1))))
+      (length (encode `(GET A JOB 
+                          SHA NA NA NA NA NA NA NA NA 
+                          GET A JOB 
+                          SHA NA NA NA NA NA NA NA NA 
+                          WAH YIP YIP YIP YIP YIP YIP YIP YIP YIP 
+                          SHA BOOM) rock-words-tree))
+#+END_SRC
+
+使用了84味编码，如果使用定长编码，需要108位
+
+*** 2.71
+     :PROPERTIES:
+     :CUSTOM_ID: section-18
+     :END:
+
+最频繁的只用了一位，而最不频繁的则需要用n-1位，这是极度不平衡的Huffman树(也是最坏情况)
+
+*** 2.72
+     :PROPERTIES:
+     :CUSTOM_ID: section-19
+     :END:
+
+对于最频繁的，由于他只编码了一位，消耗的仅仅是遍历一遍集合的代价，因此是
+$$\Theta(n)$$ 的，而对于最不频繁的，在每一位的遍历代价分别是n n-1 n-2
+......，执行次数是n-1，因此复杂度是 $$\Theta(n^3)$$ 的。
+
+Huffman树基于贪心的方法构建，由于面向的是实际的编码序列，因此它的实际工作期望也是介于这两个复杂度之间的。
+
+对于相对平衡的Huffman树，它的复杂度应在 $$\Theta(nlog^2n)$$ 左右。
+
+** 2.4 抽象数据的多重表示
+   :PROPERTIES:
+   :CUSTOM_ID: 抽象数据的多重表示
+   :END:
+
+*** 2.73
+     :PROPERTIES:
+     :CUSTOM_ID: section
+     :END:
+
+#+BEGIN_SRC scheme
+  ; A）num? 和 variable? 谓词都是在数据层面的判断，而不是在数据操作层面的谓词，因此不能安装到表内，
+  ;    因为他们对所有数据类型具有通用性。
+  ; B) 
+  (define (install-add-package)
+      (define (addend x) (car (cdr x)))
+      (define (augend x) (car (cdr (cdr x))))
+      (define (make-sum a1 a2)
+          (cond ((=number? a1 0) a2)
+                ((=number? a2 0) a1)
+                ((and (number? a1) (number? a2)) (+ a1 a2))
+                (else (tag (list a1 a2)))))
+      (define (deriv-plus object var)
+          (make-sum (deriv (car object) var)
+                    (deriv (car (cdr object)) var)))
+      (define (tag x) (attach-tag `+ x))
+      (put `deriv `+ deriv-plus)
+      (put `make-sum `+ make-sum)
+      `done)
+  (define (install-multiply-package)
+      (define (multiplier p) (car (cdr p)))
+      (define (multiplicand p) (car (cdr (cdr p))))
+      (define (make-product a1 a2)
+          (cond ((or (=number? a1 0) (=number? a2 0)) 0)
+                ((=number? a1 1) a2)
+                ((=number? a2 1) a1)
+                ((and (number? a1) (number? a2)) (* a1 a2))
+                (else (tag (list a1 a2)))))
+      (define (deriv-multi object var)
+          ((get `make-sum `+) (make-product (car expr) (deriv (car (cdr expr)) var))
+                              (make-product (car (cdr expr)) (deriv (car expr) var))))
+      (define (tag x) (attach-tag `* x))
+      (put `deriv `* deriv-multi)
+      (put `make-product `* make-product)
+      `done)
+
+  ; C)
+  (define (install-exp-package)
+      (define (base x) (car (cdr x)))
+      (define (exponent x) (car (cdr (cdr x))))
+      (define (make-exp a1 a2)
+          (cond ((=number? a2 1) a1)
+                ((=number? a2 0) 1)
+                ((and (number? a1) (number? a2)) (exp a1 a2))
+                (else (tag (list a1 a2)))))
+      (define (deriv-exp object var)
+          ((get `make-product `*) (exponent expr)
+          ((get `make-product `*) (make-exp (base expr) ((get `make-sum `+) (exponent expr) (- 1)))
+          (deriv (base expr) var))))
+      (define (tag x) (attach-tag `** x))
+      (put `deriv `** deriv-exp)
+      (put `make-exp `** make-exp)
+      `done)
+
+  ; D)
+  ; 只需修改每个安装包的put函数即可
+#+END_SRC
+
+*** 2.74
+     :PROPERTIES:
+     :CUSTOM_ID: section-1
+     :END:
+
+简要的说一下这道题目（因为代码量实在太大了）
+
+A）
+只需要提供各个分支机构实现集合的方法，这样我们就能在安装了集合表示包的表中寻找到能够查询的方法。
+
+B） 同A
+
+C） 同A
+
+D）
+显然数据导向的通用型操作不需要修改，只需要安装新的人事文件的表示方法就行了。
+
+*** 2.75
+     :PROPERTIES:
+     :CUSTOM_ID: section-2
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (make-from-mag-ang mag ang)
+      (define dispatch op)
+          (cond ((eq? op `real-part) (* mag (cos ang)))
+                ((eq? op `imag-part) (* mag (sin ang)))
+                ((eq? op `magnitude) x)
+                ((eq? op `angle) y)
+                (else (display "Unknown op -- MAKE-FROM-MAG-ANG" op)))
+      dispatch)
+#+END_SRC
+
+*** 2.76
+     :PROPERTIES:
+     :CUSTOM_ID: section-3
+     :END:
+
+显式分派的通用性操作，每次安装一个操作或者类型，都要修改所有的通用性操作，十分的麻烦。
+
+数据导向的通用型操作，每次安装一个操作时，并不需要修改其他什么，每次安装一个类型时，需要修改分派表的结构。适合安装过程。（安装类型其实也没有修改，但有效率上的损失。）
+
+消息传递的数据类型，每次安装新操作都要修改所有数据类型，安装新类型，则不需要修改什么，适合安装类型。
+
+** 2.5 带有通用型操作的系统
+   :PROPERTIES:
+   :CUSTOM_ID: 带有通用型操作的系统
+   :END:
+
+*** 2.77
+     :PROPERTIES:
+     :CUSTOM_ID: section
+     :END:
+
+因为在复数层面没有定义magnitude，所以解释器在表通用算术包的负数列里找不到magnitude，先进入magnitude，然后apply-generic进入了`magnitude的apply过程，然后再次进入`magnitude的分派，这次的标志类型会变成rectangle或者polar中的一种，再次apply的时候就能求值了。
+
+*** 2.78
+     :PROPERTIES:
+     :CUSTOM_ID: section-1
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (attach-tag type-tag contents)
+      (cond (number? (car contents) contents)
+            (else (cons type-tag contents))))
+  (define (type-tag datum)
+      (cond ((pair? datum)
+              (if (number? (car datum))
+                  `scheme-number
+                  (car datum)))
+            (else (if (number? datum)
+                  `scheme-number
+                  (display "Bad tagged datum --TYPE-TAG" datum)))))
+  (define (contents datum)
+      (cond ((pair? datum)
+              (if (number? (car datum))
+                  datum
+                  (cdr datum)))
+            (else (if (number? datum)
+                  datum
+                  (display "Bad tagged datum -- CONTENTS" datum)))))
+#+END_SRC
+
+*** 2.79
+     :PROPERTIES:
+     :CUSTOM_ID: section-2
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (install-equ-package)
+      (define (equ-number x y)
+          (= x y))
+      (define (equ-rat x y)
+          (and (= (number x) (number y))
+               (= (denom x) (denom y))))
+      (define (equ-complex x y)
+          (and (= (real-part x) (real-part y))
+               (= (imag-part x) (imag-part y))))
+      (put `equal `(scheme-number scheme-number) equ-number)
+      (put `equal `(rational rational) equ-rat)
+      (put `equal `(complex complex) equ-complex)
+      `done)
+  (define (equal a b)
+      (apply-generic `equal a b))
+#+END_SRC
+
+*** 2.80
+     :PROPERTIES:
+     :CUSTOM_ID: section-3
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (install-equzero-package)
+      (define (equ-zero-number x)
+          (= x 0))
+      (define (equ-zero-rat x)
+          (and (= (number x) 0)
+              (not (= (denom x) 0))))
+      (define (equ-zero-complex x)
+          (= (magnitude x) 0))
+      (put `=zero? `scheme-number equ-zero-number)
+      (put `=zero? `rational equ-zero-rat)
+      (put `=zero? `complex equ-zero-complex)
+      `done)
+  (define (=zero? a)
+      (apply-generic `=zero? a))
+#+END_SRC
+
+*** 2.81
+     :PROPERTIES:
+     :CUSTOM_ID: section-4
+     :END:
+
+A）
+显然Louis的程序会使得过程进入无限的递归，每次都尝试将复数转化为复数而又找不到相应的过程。
+
+B）
+并不可以，所有没能正确找到过程的两个相同类型的参数做运算时，都会无限循环而不抛出错误。
+
+C）
+
+#+BEGIN_SRC scheme
+  (define (apply-generic op . args)
+      (let ((type-tags (map type-tag args)))
+          (let ((proc (get op type-tags)))
+              (if proc
+                  (apply proc (map contents args))
+              (if (= (length args) 2)
+                  (let ((type1 (car type-tags))
+                        (type2 (car (cdr type-tags))))
+                      (if (eq? type1 type2)
+                          (display "No method for this type" type1)
+                          (let ((a1 (car args)
+                                (a2 (car (cdr args)))))
+                              (let ((t1->t2 (get-coercion type1 type2))
+                                    (t2->t1 (get-coercion type2 type1)))
+                                  (cond (t1->t2 (apply-generic op (t1->t2 a1) a2))
+                                        (t2->t1 (apply-generic op a1 (t2->t1 a2)))
+                                        (else (display "No method for these types" (list op type-tags))))))))
+                  (display "No method for these types" (list op type-tags)))))))
+#+END_SRC
+
+*** 2.82
+     :PROPERTIES:
+     :CUSTOM_ID: section-5
+     :END:
+
+一个显然的情况是将所有的情况都推广到未出现在参数中的数据类型才能进行计算，同时，如果对于一部分的数，我们定义了到一个类型的转换，而另一部分却是到其他类型的转换，这样变为两种数据类型后一样可以操作，但是这也是这种策略没有考虑到的。这其实是一个排列组合问题。
+
+*** 2.83
+     :PROPERTIES:
+     :CUSTOM_ID: section-6
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (raise arg)
+      (let ((tags (car arg)))
+          (if tags
+              (apply `raise tags arg)
+              (display "Bad Data Format"))))
+  (define (install-raise-package)
+      (define (raise-number n)
+          (make-rat n 1))
+      (define (raise-rational r)
+          (/ (number r) (denom r)))
+      (define (raise-real r)
+          (make-complex-real-imag r 0))
+      (put `raise `scheme-number raise-number)
+      (put `raise `rational raise-rational)
+      (put `raise `real-number raise-real)
+      `done)
+#+END_SRC
+
+*** 2.84
+     :PROPERTIES:
+     :CUSTOM_ID: section-7
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (apply-generic op . args)
+      (let ((type-tags (map type-tag args)))
+          (let ((proc (get op type-tags)))
+              (if proc
+                  (apply proc (map contents args))
+                  (if (= (length args) 2)
+                      (let ((type1 (car type-tags))
+                            (type2 (car (cdr type-tags))))
+                          (if (eq? type1 type2)
+                              (display "No method for this type" type1)
+                              (let ((pos1 (check-from-tower type1 tower))
+                                    (pos2 (check-from-tower type2 tower))
+                                    (a1 (car args))
+                                    (a2 (car (cdr args))))
+                                  (if (< pos1 pos2)
+                                      (apply-generic op (raise a1) a2)
+                                      (apply-generic op a1 (raise a2))))))
+                      (display "No method for these types" (list op type-tags)))))))
+  (define tower `())
+  (define (check-from-tower tower type)
+      (define (check iter type tower)
+          (cond ((null? tower) (display "No mathcing types"))
+              ((eq? (car tower) type) iter)
+              (else (check (+ iter 1) type (cdr tower)))))
+      (check 1 type tower))
+#+END_SRC
+
+*** 2.85
+     :PROPERTIES:
+     :CUSTOM_ID: section-8
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (drop x)
+      (if (equ? x (project x))
+          (drop (project x))
+          x))
+  (define (project x)
+      (apply-generic `project x))
+  (define (install-project-package)
+      (define (project-complex x)
+          (real x))
+      (define (project-real r)
+          (make-rat (round r) 1))
+      (define (project-rat r)
+          (number r))
+      (put `project `complex project-complex)
+      (put `project `real-number project-real)
+      (put `project `rational project-rat)
+      `done)
+#+END_SRC
+
+只需在apply以后drop即可
+
+*** 2.86
+     :PROPERTIES:
+     :CUSTOM_ID: section-9
+     :END:
+
+实际上不需要做任何修改，因为数据层面的屏蔽，我们只要保证采用的一定是通用过程，组合数据的是何种数据也就无关紧要了。
+
+sin和cos码量太大，搁置。
+
+*** 2.87
+     :PROPERTIES:
+     :CUSTOM_ID: section-10
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (=zero-poly? p)
+      (cond ((null? p) #t)
+            (else (if (=zero? (coeff (car p)))
+                      (=zero-poly? (cdr p))
+                      #f))))
+  (put `=zero? `polynomial =zero-poly?)
+#+END_SRC
+
+*** 2.88
+     :PROPERTIES:
+     :CUSTOM_ID: section-11
+     :END:
+
+只需对多项式的每一项都取负即可，建立一个通用的取负过程也十分简单，搁置
+
+*** 2.89
+     :PROPERTIES:
+     :CUSTOM_ID: section-12
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (get-coeff order term-list)
+      (define highest (length term-list))
+      (define (iter cnt term-list)
+          (if (= cnt (- highest order))
+              (car term-list)
+              (iter (+ cnt 1) (cdr term-list))))
+      (iter 0 term-list))
+#+END_SRC
+
+*** 2.90
+     :PROPERTIES:
+     :CUSTOM_ID: section-13
+     :END:
+
+如题目意思，这道题码量巨大，且十分容易思考，搁置
+
+*** 2.91
+     :PROPERTIES:
+     :CUSTOM_ID: section-14
+     :END:
+
+#+BEGIN_SRC scheme
+  (div-terms (minus-poly L1 (multi-poly L2 (make-poly (variable L1) (cons (make-term new-o new-c))))) L2)
+  (list (cons ((multi-poly L2 (make-poly (variable L1) (cons (make-term new-o new-c))))) (car rest-of-result)) (cdr rest-of-result))
+#+END_SRC
+
+*** 2.92
+     :PROPERTIES:
+     :CUSTOM_ID: section-15
+     :END:
+
+码量过大，搁置
+
+* CH3
+** 3.1 赋值和局部状态
+   :PROPERTIES:
+   :CUSTOM_ID: 赋值和局部状态
+   :END:
+
+*** 3.1
+     :PROPERTIES:
+     :CUSTOM_ID: section
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (make-accumulator iter)
+      (lambda (addend)
+          (begin (set! iter (+ iter addend))
+                  iter)))
+#+END_SRC
+
+*** 3.2
+     :PROPERTIES:
+     :CUSTOM_ID: section-1
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (make-monitored f)
+      (let ((encounter 0))
+          (define (how-many-calls?)
+              encounter)
+          (define (reset-count)
+              (set! encounter 0))
+          (define (dispatch m)
+              (cond ((eq? m `how-many-calls?) (how-many-calls?))
+                    ((eq? m `reset-count) (reset-count))
+                    (else (begin (set! encounter (+ encounter 1)) (f m)))))
+          dispatch))
+#+END_SRC
+
+*** 3.3
+     :PROPERTIES:
+     :CUSTOM_ID: section-2
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (make-account balance secret)
+      (define (withdraw amount)
+          (if (>= balance amount)
+              (begin (set! balance (- balance amount))
+                      balance)
+                      "Insufficient funds"))
+      (define (deposit amount)
+          (set! balance (+ balance amount))
+          balance)
+      (define (dispatch pass m)
+          (cond ((not (eq? pass secret)) (lambda (money) (display "Incorrect Password")))
+                (else (cond ((eq? m `withdraw) withdraw)
+                            ((eq? m `deposit) deposit)
+                            (else (display "Unknown request -- MAKE-ACCOUNT" m))))))
+      dispatch)
+#+END_SRC
+
+*** 3.4
+     :PROPERTIES:
+     :CUSTOM_ID: section-3
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (make-account balance secret)
+      (let ((wrong-doings 0))
+          (define (withdraw amount)
+              (if (>= balance amount)
+                  (begin (set! balance (- balance amount))
+                  balance)
+                  "Insufficient funds"))
+          (define (deposit amount)
+              (set! balance (+ balance amount))
+              balance)
+          (define (dispatch pass m)
+              (cond ((not (eq? pass secret)) 
+                  (if (< wrong-doings 6)
+                      (begin (set! wrong-doings (+ wrong-doings 1)) (lambda (money) (display "Incorrect Password")))
+                          (lambda (money) (display "Call the Police!"))))
+                    (else (cond ((eq? m `withdraw) withdraw)
+                                ((eq? m `deposit) deposit)
+                                (else (display "Unknown request -- MAKE-ACCOUNT" m))))))
+          dispatch))
+#+END_SRC
+
+*** 3.5
+     :PROPERTIES:
+     :CUSTOM_ID: section-4
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (estimate-integral p x1 x2 y1 y2 trial-times)
+      (define (exp)
+          (p (random-in-range x1 x2) (random-in-range y1 y2)))
+      (define (monte-carlo trials experiment)
+          (define (iter trials-remaining trials-passed)
+              (cond ((= trials-remaining 0) (/ trials-passed trials))
+                  ((experiment) (iter (- trials-remaining 1) (+ trials-passed 1)))
+                  (else (iter (- trials-remaining 1) trials-passed))))
+          (iter trials 0))
+      (let ((estimate-rate (monte-carlo trial-times exp)))
+          (* estimate-rate (* (- x2 x1) (- y2 y1)))))
+  (define unit-circle
+      (lambda (x y)
+          (<= 1.0 (+ (* x x) (* y y)))))
+#+END_SRC
+
+*** 3.6
+     :PROPERTIES:
+     :CUSTOM_ID: section-5
+     :END:
+
+#+BEGIN_SRC scheme
+  (define random
+      (let ((x 114514))
+          (define generate
+              (begin (set! x (random-update x))
+                      x))
+          (define reset
+              (lambda (m) (set! x m)))
+          (define (dispatch m)
+              (cond ((eq? m `generate) generate)
+                    ((eq? m `reset) reset)
+                    (else (display "Unknown operation -- Rand" m))))
+          dispatch))
+#+END_SRC
+
+*** 3.7
+     :PROPERTIES:
+     :CUSTOM_ID: section-6
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (make-account balance password)
+      (let ((wrong-doings 0)
+            (secret (list password)))
+          (define (withdraw amount)
+              (if (>= balance amount)
+                  (begin (set! balance (- balance amount))
+                      balance)
+                      "Insufficient funds"))
+          (define (deposit amount)
+              (set! balance (+ balance amount))
+                  balance)
+          (define (dispatch pass m)
+              (cond ((not (element-of-set? pass secret)) 
+                  (if (< wrong-doings 6)
+                      (begin (set! wrong-doings (+ wrong-doings 1)) (lambda (money) (display "Incorrect Password")))
+                          (lambda (money) (display "Call the Police!"))))
+                    (else (cond ((eq? m `withdraw) withdraw)
+                                ((eq? m `deposit) deposit)
+                                ((eq? m `join) (lambda (new-pass) (set! secret (cons new-pass secret))))
+                                (else (display "Unknown request -- MAKE-ACCOUNT" m))))))
+          dispatch))
+  (define (make-joint account secret new-pass)
+      (begin ((account secret `join) new-pass) account))
+#+END_SRC
+
+*** 3.8
+     :PROPERTIES:
+     :CUSTOM_ID: section-7
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (f m)
+      (let ((x 0))
+          (begin x (set! x m))))
+#+END_SRC
+
+** 3.2 求值的环境模型
+   :PROPERTIES:
+   :CUSTOM_ID: 求值的环境模型
+   :END:
+
+*** 3.9
+     :PROPERTIES:
+     :CUSTOM_ID: section
+     :END:
+
+对于递归版本，我们会先创建F-6环境 x:6
+
+然后是 F-5环境 x;5......
+
+每个环境都指向了全局环境。
+
+对于迭代版本，我们会创建一个Fac环境，F x:6
+
+然后创建一个Fac-iter环境
+
+Fact-iter: 1 counter:1 max-count: 6
+
+......
+
+同样这些环境都指向全局环境。
+
+可以看到，递归并不会使得环境成为一条链的指向。
+
+*** 3.10
+     :PROPERTIES:
+     :CUSTOM_ID: section-1
+     :END:
+
+多了一层lambda实际上也就是多了一层环境，所以我们只需要创建一个环境指向make-withdraw的环境，然后创建一个balance的约束，并在这个之上进一步保存局部变量即可。但实际上，这里多了一层无用的环境，initial-amount对整个的系统设计并没有任何贡献。
+
+*** 3.11
+     :PROPERTIES:
+     :CUSTOM_ID: section-2
+     :END:
+
+acc的状态会保存在make-account
+50创建的环境里，指向了dispatch这个lambda函数。
+
+当我们给它传入参数时，就会另创建一个环境，并将m做约束。
+
+环境中的withdraw和deposit是共享的。
+
+** 3.3 用变动的数据做模拟
+   :PROPERTIES:
+   :CUSTOM_ID: 用变动的数据做模拟
+   :END:
+
+*** 3.12
+     :PROPERTIES:
+     :CUSTOM_ID: section
+     :END:
+
+A） (b)
+
+B） (b,c,d)
+
+显然set-cdr！改变了它的值
+
+*** 3.13
+     :PROPERTIES:
+     :CUSTOM_ID: section-1
+     :END:
+
+盒子图形中，c的cdr指向了a，造成了一个无限循环
+
+*** 3.14
+     :PROPERTIES:
+     :CUSTOM_ID: section-2
+     :END:
+
+mystery实现了列表的逆序。
+
+打印出来的值如下：
+
+(a,b,c,d)
+
+(d,c,b,a)
+
+盒子图形很显然
+
+*** 3.15
+     :PROPERTIES:
+     :CUSTOM_ID: section-3
+     :END:
+
+自行模拟
+
+*** 3.16
+     :PROPERTIES:
+     :CUSTOM_ID: section-4
+     :END:
+
+只要这个序对中存在数据的共享，答案就会发生错误。
+
+*** 3.17
+     :PROPERTIES:
+     :CUSTOM_ID: section-5
+     :END:
+
+只需使用集合来去重即可
+
+#+BEGIN_SRC scheme
+  (define (count-pairs x)
+      (define (inner x set)
+          (if (and (pair? x) (not (memq x set)))
+              (inner (car x) 
+                  (inner (cdr x) (cons x set)))
+              set))
+      (length (inner x `())))
+#+END_SRC
+
+*** 3.18
+     :PROPERTIES:
+     :CUSTOM_ID: section-6
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (loop? x)
+      (define (iter lst)
+          (let ((id (cons `() `())))
+              (cond ((null? lst) #f)
+                    ((eq? id (car lst)) #t)
+                    (else (set-car! (car lst) id)
+                          (iter (cdr lst))))))
+      (iter x))
+#+END_SRC
+
+*** 3.19
+     :PROPERTIES:
+     :CUSTOM_ID: section-7
+     :END:
+
+使用步长步进法，每次前进一步和两步，如果能够相遇，则有环
+
+#+BEGIN_SRC scheme
+  (define (loop? lst)
+      (define (iter x y)
+          (let ((x-walk (list-walk 1 x))
+                (y-walk (list-walk 2 y)))
+              (cond ((or (null? x-walk) (null? y-walk))
+                      #f)
+                    ((eq? x-walk y-walk)
+                      #t)
+                    (else
+                      (iter x-walk y-walk)))))
+      (iter lst lst))
+  (define (list-walk step lst)
+      (cond ((null? lst)
+              '())
+            ((= step 0)
+              lst)
+            (else
+              (list-walk (- step 1)
+                         (cdr lst)))))
+#+END_SRC
+
+*** 3.20
+     :PROPERTIES:
+     :CUSTOM_ID: section-8
+     :END:
+
+自行模拟
+
+*** 3.21
+     :PROPERTIES:
+     :CUSTOM_ID: section-9
+     :END:
+
+由于删除操作并不对尾指针操作，因此，最后打印出来的队列尾指针还会指向最后一个数据
+
+#+BEGIN_SRC scheme
+  (define (print-queue queue)
+      (define (iter que res)
+          (cond ((null? que) res)
+                (else (cons (car que) (iter (cdr que) res)))))
+      (iter (front-ptr queue) `()))
+#+END_SRC
+
+*** 3.22
+     :PROPERTIES:
+     :CUSTOM_ID: section-10
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (make-queue)
+      (let ((front-ptr `())
+            ((rear-ptr `())))
+          (define (empty-queue?) (null? front-ptr))
+          (define (set-front-ptr!)
+              (lambda (val)
+                  (set! front-ptr val)))
+          (define (set-rear-ptr!)
+              (lambda (val)
+                  (set! rear-ptr val)))
+          (define (front-queue)
+              (cond ((empty-queue?)
+                      (display "FRONT called with an empty queue"))
+                    (else (car front-ptr))))
+          (define (insert-queue!)
+              (lambda (val)
+                  (let ((new-pair (cons value `())))
+                      (cond ((empty-queue?)
+                              ((set-front-ptr!) new-pair)
+                              ((set-rear-ptr!) new-pair))
+                            (else (set-cdr! rear-ptr new-pair)
+                              ((set-rear-ptr!) new-pair))))))
+          (define (delete-queue!)
+              (cond ((empty-queue?)
+                      (display "DELETE called with an empty queue"))
+                    (else ((set-front-ptr!) (cdr front-ptr)))))
+          (define (dispatch m)
+              (cond ((eq? m `empty-queue?) (empty-queue?))
+                    ((eq? m `front-queue) (front-queue))
+                    ((eq? m `insert-queue!) (insert-queue!))
+                    ((eq? m `delete-queue!) (delete-queue!))
+                    (else (display "ERROR unknown command" m))))
+          dispatch))
+#+END_SRC
+
+*** 3.23
+     :PROPERTIES:
+     :CUSTOM_ID: section-11
+     :END:
+
+主要代码和queue类似，其中新定义insert-front! 和 delete - rear!
+
+#+BEGIN_SRC scheme
+  (define (insert-front! deque value)
+      (cond ((empty-queue? deque) (insert-queue! deque))
+            (else (let ((new-pair (cons value (front-ptr deque))))
+                      (set-front-ptr! deque new-pair)))))
+  (define (delete-rear! deque)
+      (define (find deque lst)
+          (cond ((null? (cdr (cdr lst)))
+                  (set-cdr! lst '())
+                  (set-rear-ptr! deque lst)
+                  deque)
+                (else
+                  (find deque (cdr lst)))))
+      (cond ((empty-queue? deque)
+              (display "DELETE called with an empty deque" deque))
+            ((null? (cdr (front-ptr deque)))
+              (set-front-ptr! deque `()))
+            (else (find deque (front-ptr deque)))))
+#+END_SRC
+
+*** 3.24
+     :PROPERTIES:
+     :CUSTOM_ID: section-12
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (assoc key table)
+      (cond ((null? table) #f)
+            ((same-key? key (caar table)) (car table))
+            (else (assoc key (cdr table)))))
+#+END_SRC
+
+*** 3.25
+     :PROPERTIES:
+     :CUSTOM_ID: section-13
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (lookup-inner keylist table)
+      (if (null? keylist)
+          table
+          (let ((subtable (assoc (car keylist) (cdr table))))
+              (if subtable
+                  (lookup-inner (cdr keylist) subtable)
+                  #f))))
+  (define (look-up keylist table)
+      (if (null? keylist)
+          #f
+          (lookup-inner keylist table)))
+  (define (make-list keylist value)
+      (if (null? (cdr keylist))
+          (cons (car keylist value))
+          (list (car keylist) (make-list (cdr keylist) value))))
+  (define (insert-inner! keylist value table)
+      (if (null? (cdr keylist))
+          (let ((record (assoc (car keylist) (cdr table))))
+              (if record
+                  (set-cdr! record value)
+                  (set-cdr! table (cons (cons (car keylist) value) (cdr table)))))
+                  (let ((subtable assoc (car keylist) (cdr table)))
+                      (if subtable
+                          (insert-inner! (cdr keylist) value subtable)
+                          (set-cdr! table (cons (make-list keylist value) (cdr table)))))))
+  (define (insert! keylist value table)
+      (if (null? keylist)
+          (display "INSERT! called with an empty keylist" keylist)
+          (insert-inner! keylist value table)))
+#+END_SRC
+
+*** 3.26
+     :PROPERTIES:
+     :CUSTOM_ID: section-14
+     :END:
+
+简要的谈谈实现
+
+我们的每一个表格都以字典序的平衡二叉树组织起来
+
+然后我们每次检索，就和关键字表的第一个与节点进行比对，向下搜索，同样我们也可以保证数据的嵌套性，因为一棵二叉树的一个节点也可以是一棵二叉树。
+
+*** 3.27
+     :PROPERTIES:
+     :CUSTOM_ID: section-15
+     :END:
+
+这是一种叫做记忆化搜索的技巧，环境图可以看到，对于fib 3 它不在表格中
+
+因此计算fib 1 和 fib 2
+
+然后fib 1 被计算出 1
+
+Fib 2 去寻找fib1 发现表格中有fib 1，然后直接返回，不再计算
+
+不可以，因为这样不会去执行记忆化搜索。
+
+*** 3.28
+     :PROPERTIES:
+     :CUSTOM_ID: section-16
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (or-gate a1 a2 output)
+      (define (or-action-procedure)
+          (let ((new-value
+                (logical-or (get-signal a1) (get-signal a2))))
+              (after-delay and-gate-delay
+                  (lambda ()
+                      (set-signal! output new-value)))))
+      (add-action! a1 or-action-procedure)
+      (add-action! a2 or-action-procedure)
+      `ok)
+#+END_SRC
+
+*** 3.29
+     :PROPERTIES:
+     :CUSTOM_ID: section-17
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (orgate a1 a2 output)
+      (let ((d (make-wire))
+            (e (make-wire))
+            (nand1 (make-wire))
+            (nand2 (make-wire))
+            (out (make-wire)))
+            (and-gate a1 a2 d)
+            (and-gate a1 a2 e)
+            (invert-gate d nand1)
+            (invert-gate e nand2)
+            (and-gate nand1 nand2 out)
+            (invert-gate out output)
+      `ok))
+#+END_SRC
+
+详见与非门
+
+时延2与2非
+
+*** 3.30
+     :PROPERTIES:
+     :CUSTOM_ID: section-18
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (ripple-carry-adder alist blist slist c)
+      (let ((len (length alist)))
+          (define (iter lenth alist blist slist)
+              (cond ((= lenth 1) 
+                      (full-adder (car alist) (car blist) (iter (+ lenth 1) (cdr alist) (cdr blist) (cdr slist)) (car slist) c))
+                    ((= lenth len) 
+                      (define cline (make-wire))
+                      (full-adder (car alist) (car blist) 0 (car slist) cline)
+                      cline)
+                    (else (define cline (make-wire))
+                      (full-adder (car alist) (car blist) (iter (+ lenth 1) (cdr alist) (cdr blist) (cdr slist)) (car slist) cline))))
+          (iter 1 alist blist slist)))
+#+END_SRC
+
+时延是3个或门 2个非门和四个与门
+
+*** 3.31
+     :PROPERTIES:
+     :CUSTOM_ID: section-19
+     :END:
+
+如果我们不在加入动作之后立即执行这个动作，那么我们就会缺少一个初始开始的条件，模拟器并不会知道何时开始执行。(不会被加入到待处理表中）
+
+在上面的半加器中，我们就永远获取不到这个结果了
+
+*** 3.32
+     :PROPERTIES:
+     :CUSTOM_ID: section-20
+     :END:
+
+我们同时监测了与门的两个输入端，如果采用FILO的栈设计，那么我们改变为1,0的过程会触发两次与门计算，后面的计算先被执行，此时答案为0，然后执行第一次，答案更新为1，就会发生错误。
+
+*数字电路的顺序性决定了数据结构的处理顺序。*
+
+*** 3.33
+     :PROPERTIES:
+     :CUSTOM_ID: section-21
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (averager a b c)
+      (define mid (make-connecter))
+      (define sum (make-connecter))
+      (define sumer (adder a b sum))
+      (define mider (constant 0.5 mid))
+      (define multer (multiplier sum mid c))
+      (define (process-new-value)
+          (cond ((and (has-value? a) (has-value? b))
+                  (inform-about-value sumer)
+                  (inform-about-value multer))
+                ((and (has-value? c)
+                      (or (has-value? a) (has-value? b)))
+                  (inform-about-value multer)
+                  (inform-about-value adder))))
+      (define (process-forget-value)
+          ((inform-about-no-value sumer)
+          (inform-about-no-value multer)
+          (process-new-value)))
+      (define (me request)
+          (cond ((eq? request `I-have-a-value)
+                  (process-new-value))
+                ((eq? request `I-lost-a-value)
+                  (process-forget-value))
+                (else (display "Unknown request -- AVERAGER" request))))
+      me)
+#+END_SRC
+
+*** 3.34
+     :PROPERTIES:
+     :CUSTOM_ID: section-22
+     :END:
+
+这个设计使得一个约束器上链接了两个同样的连接器，这样使得这个约束变成了单向约束，只能求得平方，而不能求得开根号。
+
+一个解决方案是，定义一个内部的牛顿迭代法方法和平方方法，然后进行运算。
+
+*** 3.35
+     :PROPERTIES:
+     :CUSTOM_ID: section-23
+     :END:
+
+如上题提出的解决方案。
+
+*** 3.36
+     :PROPERTIES:
+     :CUSTOM_ID: section-24
+     :END:
+
+没有约束器，这个过程应该会直接结束。
+
+*** 3.37
+     :PROPERTIES:
+     :CUSTOM_ID: section-25
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (c- x y)
+      (let ((p (make-connecter)))
+          (adder p y x)
+          p))
+  (define (c* x y)
+      (let ((z (make-connecter)))
+          (multiplier x y z)
+          z))
+  (define (c/ x y)
+      (let ((p (make-connecter)))
+          (multiplier p y x)
+          p))
+  (define (cv val)
+      (let ((m (make-connecter)))
+          (constant val m)
+          m))
+#+END_SRC
+
+参见脚注，表达式风格的语言由于对复合数据采用了和基本数据一样的处理方式，可以省去定义许多中间变量，但是这样也带来了一个小小的坏处，一个表达式风格的语句不能直接越过连接器和约束器通信，或者说，无法不经过连接器获取到约束器的值，但是命令式风格的语言所提供的*句柄*却可以做到这一点。
+** 3.4 并发：时间是一个本质问题
+   :PROPERTIES:
+   :CUSTOM_ID: 并发时间是一个本质问题
+   :END:
+
+*** 3.38
+     :PROPERTIES:
+     :CUSTOM_ID: section
+     :END:
+
+可能值
+
+45
+
+35
+
+50
+
+40
+
+如果并发的执行，还可以出现
+
+110 80 55 30 60 90这六种情况
+
+具体图略
+
+*** 3.39
+     :PROPERTIES:
+     :CUSTOM_ID: section-1
+     :END:
+
+可能出现的值会有
+
+121 101
+
+实际上a能够访问的值只有10和11，而b能访问的值只有10和100
+
+由于a、b的运行串行性，答案只会是100+1和11*11
+
+*** 3.40
+     :PROPERTIES:
+     :CUSTOM_ID: section-2
+     :END:
+
+两个都是乘法，由于结合律的特殊性质
+
+可能产生的值会有
+
+x2 x3 x4 x5 x6这五种情况
+
+如果加入了串行计算，就只会有
+
+x6这一种情况了
+
+这是加速并行运算的一种有效方式之一（结合律等价性）
+
+*** 3.41
+     :PROPERTIES:
+     :CUSTOM_ID: section-3
+     :END:
+
+如果一个人在和一个并发的取款操作一起查看余额，那么他的接下来取款就会发生无法取出足够钱的情况，但是注意的是，我们的并发系统是注意事务处理的，即对于任意一个请求，都得保证它不能知道其他请求的存在。这样并不会导致不正常，只会导致不愉快。
+
+*** 3.42
+     :PROPERTIES:
+     :CUSTOM_ID: section-4
+     :END:
+
+不安全。
+
+这样的修改，本质上是组织了并发的存在。因为它会用已经创建好的串行去处理并发，而不是在并发的时候创建串行，这会使得一个时间只会有一个进程运行。
+
+*** 3.43
+     :PROPERTIES:
+     :CUSTOM_ID: section-5
+     :END:
+
+证明，并发的交换会在两个账户之间等价的读取差值进行转移，因此并不在外来的金额交换.
+
+按序执行的操作是封闭的。
+
+如果不使用外显的串行，那么在读取一个差值后可能会发生未转移完即与其他的账户通信的行为，然而即使如此，由于每个存取款的数量都是这个账户在某一时刻的状态，那么总数额就不会发生变化。
+
+如果去除了存取款的串行化，那么单个账户的外来状态就无法统一，因而也就不封闭了。
+
+*** 3.44
+     :PROPERTIES:
+     :CUSTOM_ID: section-6
+     :END:
+
+Louis的担忧是没有道理的。
+
+转移和交换之间的本质性问题在于，交换需要的差值也是依赖于局部的状态变量，而转移的数目则是人为指定的。只要我们在单个账户建立了串行化组，就不需要担心共享资源的问题。
+
+或者形式化的一点讲，交换问题是一个A->B的映射，而转移问题应该是一个C->{A,B}的映射。
+
+*** 3.45
+     :PROPERTIES:
+     :CUSTOM_ID: section-7
+     :END:
+
+这个问题和3.42是一样的，本质上讲，这是那已经创建好的串行化组来使用。
+
+如果并发的交换账户，那么串行化的2锁住了exchange的操作，而exchange里对2存款使用的却是同一个串行化组，这就造成了错误。因此我们每次都只能创建新的串行化组用于并发。
+
+*** 3.46
+     :PROPERTIES:
+     :CUSTOM_ID: section-8
+     :END:
+
+如果同时访问互斥元，那么在一个检查到这个为假的时候，还没来得及设为真，另一个进程就也访问到它为假，这样，两个进程都*获取*到了互斥元。
+
+*** 3.47
+     :PROPERTIES:
+     :CUSTOM_ID: section-9
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (make-signal-volume n)
+      (let ((cell 0))
+          (define (me m)
+              (cond ((eq? m `acquire)
+                      (if (test-and-set! cell)
+                          (me `acquire)))
+                    ((eq? m `release) (minus! cell))))
+          (define (minus! a)
+              (without-interrupt
+                  (lambda () (set! a (- a 1)))))
+          (define (test-and-set! a)
+              (without-interrupt
+                  (lambda () 
+                      (if (= a n)
+                          #t
+                          (begin (set! a (+ a 1))
+                          #f)))))
+          me))
+#+END_SRC
+
+*** 3.48
+     :PROPERTIES:
+     :CUSTOM_ID: section-10
+     :END:
+
+这个策略实际上就是在给进程指定一个进入串行的过程，保证了不会互相阻塞的情况。
+
+#+BEGIN_SRC scheme
+  (define (serialized-exchange acc-1 acc-2)
+      (if (< (acc-1 'id) (acc-2 'id))
+          (serialize-and-exchange acc-1 acc-2)
+          (serialize-and-exchange acc-2 acc-1)))
+
+  (define (serialize-and-exchange smaller-id-account bigger-id-account)
+      (let ((smaller-serializer (smaller-id-account 'serializer)))
+          (let ((bigger-serializer (bigger-id-account 'serializer)))
+              ((smaller-serializer (bigger-serializer exchange))
+               smaller-id-account
+               bigger-id-account))))
+#+END_SRC
+
+*** 3.49
+     :PROPERTIES:
+     :CUSTOM_ID: section-11
+     :END:
+
+设想一个并发的修改堆（heap）的操作，然后两个并发的进程在搜索过程中分别锁死了两棵子树。
+
+（修改，如果我们强行指定左子树高于右子树能解决这个问题）
+
+** 3.5 流
+   :PROPERTIES:
+   :CUSTOM_ID: 流
+   :END:
+
+*** 3.50
+     :PROPERTIES:
+     :CUSTOM_ID: section
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (stream-map proc . argstreams)
+      (if (stream-empty? (car argstreams))
+          `()
+          (stream-cons (apply proc (map stream-first argstreams))
+                      (apply stream-map (cons proc (map stream-second argstreams))))))
+#+END_SRC
+
+*** 3.51
+     :PROPERTIES:
+     :CUSTOM_ID: section-1
+     :END:
+
+由于使用了记忆化过程的原因，我们求值第一个得到的12345序列并不会在第二个出现
+
+*** 3.52
+     :PROPERTIES:
+     :CUSTOM_ID: section-2
+     :END:
+
+第一个表达式后sum的值为136，第二个之后的值为210
+
+求值第一个给出136，第二个给出10 15 45 55 105 120 190 210
+
+每次定义化流都只会求出第一个值。
+
+会，因为记忆化的存在，我们可以确保accum在每一个数上只求值了一遍。
+
+*** 3.53
+     :PROPERTIES:
+     :CUSTOM_ID: section-3
+     :END:
+
+这个stream同样会生产出2的各个幂
+
+*** 3.54
+     :PROPERTIES:
+     :CUSTOM_ID: section-4
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (mul-streams s1 s2)
+      (stream-map * s1 s2))
+  (define factorials (stream-cons 1 (mul-streams integers factorials)))
+#+END_SRC
+
+*** 3.55
+     :PROPERTIES:
+     :CUSTOM_ID: section-5
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (partial-sum stream)
+  (define (iter argstream result)
+      (stream-cons result
+          (iter (stream-rest argstream) (+ result (stream-first argstream)))))
+      (iter (stream-rest stream) (stream-first stream)))
+#+END_SRC
+
+*** 3.56
+     :PROPERTIES:
+     :CUSTOM_ID: section-6
+     :END:
+
+#+BEGIN_SRC scheme
+  (define S (stream-cons 1 (merge (scale-stream S 2) (merge (scale-stream S 3) (scale-stream S 5)))))
+#+END_SRC
+
+*** 3.57
+     :PROPERTIES:
+     :CUSTOM_ID: section-7
+     :END:
+
+需要调用n-1次
+
+如果不使用记忆化优化，那么显然计算过程可以画成二叉树形式，复杂度也就是指数级了。
+
+*** 3.58
+     :PROPERTIES:
+     :CUSTOM_ID: section-8
+     :END:
+
+这个序列产生的是num/den的radix进制小数
+
+0.1428571228......
+
+0.3750000000......
+
+*** 3.59
+     :PROPERTIES:
+     :CUSTOM_ID: section-9
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (integrate-series stream)
+      (define (iter s n)
+          (stream-cons (* (/ 1 n) (stream-first s))
+              (iter (stream-rest s) (+ n 1))))
+      (iter stream 1))
+  (define cosine-series
+  (stream-cons 1 (integrate-series (stream-cons 1 (integrate-series (stream-cons 1 (integrate-series (stream-cons 1 (integrate-series cosine-series)))))))))
+#+END_SRC
+
+*** 3.60
+     :PROPERTIES:
+     :CUSTOM_ID: section-10
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (mul-series s1 s2)
+      (stream-cons (* (stream-first s1) (stream-first s2))
+      (add-streams (mul-series (stream-rest s1) (scale-stream (stream-first s1) s2)) (mul-series (scale-stream (stream-first s2) s1) (stream-rest s2)))))
+#+END_SRC
+
+*** 3.61
+     :PROPERTIES:
+     :CUSTOM_ID: section-11
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (inv-series s)
+      (stream-cons 1 (mul-series (stream-map (lambda (x) (- x)) (stream-rest s)) (inv-series s))))
+#+END_SRC
+
+*** 3.62
+     :PROPERTIES:
+     :CUSTOM_ID: section-12
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (div-series r s)
+  (add-streams r (mul-series (stream-map (lambda (x) (- x)) (stream-rest s)) (div-series r s))))
+#+END_SRC
+
+*** 3.63
+     :PROPERTIES:
+     :CUSTOM_ID: section-13
+     :END:
+
+这样带来的一个问题是，我们每次stream-map的都是从头开始的序列，也就是，我们对之前的数做了多余的优化，带来了冗余的计算。
+
+会，这样所带来的是我们不需要实际的去improve每一项值。
+
+*** 3.64
+     :PROPERTIES:
+     :CUSTOM_ID: section-14
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (stream-limit s tolerance)
+      (let ((s0 (stream-ref s 0))
+            (s1 (stream-ref s 1)))
+          (cond ((< (abs (- s1 s0)) tolerance) s1)
+                (else (stream-limit (stream-rest s) tolerance)))))
+#+END_SRC
+
+*** 3.65
+     :PROPERTIES:
+     :CUSTOM_ID: section-15
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (ln2-summands n)
+      (stream-cons (/ 1.0 n)
+          (stream-map - (ln2-summands (+ n 1)))))
+  (define ln2
+      (partial-sum (ln2-summands 1)))
+#+END_SRC
+
+*** 3.66
+     :PROPERTIES:
+     :CUSTOM_ID: section-16
+     :END:
+
+在（1 n）前会有2*（n-1）个序列
+
+在（n m）前会有(n+3)/n/(m-1)/2个序列
+
+*** 3.67
+     :PROPERTIES:
+     :CUSTOM_ID: section-17
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (pairs s t)
+      (stream-cons
+          (list (stream-first s) (stream-first t))
+          (interleave
+              (interleave
+                  (stream-map (lambda (x) (list x (stream-first t))) (stream-rest s))
+                  (stream-map (lambda (x) (list (stream-first s) x)) (stream-rest t)))
+              (pairs (stream-rest s) (stream-rest t)))))
+#+END_SRC
+
+*** 3.68
+     :PROPERTIES:
+     :CUSTOM_ID: section-18
+     :END:
+
+这样会让程序无限运行下去而无法输出结果，因为它并没有用stream-cons来对后续部分做求值允诺。
+
+*** 3.69
+     :PROPERTIES:
+     :CUSTOM_ID: section-19
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (triples s t u)
+      (stream-cons
+          (list (stream-first s) (stream-first t) (stream-first u))
+              (interleave
+                  (stream-map (lambda (x) (cons (stream-first s) x)) (pairs (stream-rest t) (stream-rest u)))
+                  (triples (stream-rest s) (stream-rest t) (stream-rest u)))))
+#+END_SRC
+
+*** 3.70
+     :PROPERTIES:
+     :CUSTOM_ID: section-20
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (weighted-pairs s t weight)
+      (stream-cons
+          (list (stream-first s) (stream-first t))
+              (merge-weighted
+                  (stream-map (lambda (x) (list (stream-first s) x)) (stream-rest t))
+                  (weighted-pairs (stream-rest s) (stream-rest t) weight)
+                  weight)))
+  (define (sum-weight pair)
+      (+ (car pair) (car (cdr pair))))
+  (define (weight235 pair)
+      (+ (* 2 (car pair)) (* 3 (car (cdr pair))) (* 5 (car pair) (car (cdr pair)))))
+  (define (can-divide-235? x)
+      (or (= (remainder x 2) 0) (= (remainder x 3) 0) (= (remainder x 5) 0)))
+  (display-stream (stream-filter 
+                  (lambda (pair) (and (can-divide-235? (car pair)) (can-divide-235? (car (cdr pair))))) 
+                  (weighted-pairs integers integers weight235)))
+#+END_SRC
+
+*** 3.71
+     :PROPERTIES:
+     :CUSTOM_ID: section-21
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (cubic x)
+  (* x x x))
+  (define (weight-cubic pair)
+      (let ((x (car pair))
+            (y (car (cdr pair))))
+          (+ (cubic x) (cubic y))))
+  (define (iter s)
+      (let ((s0 (stream-ref s 0))
+            (s1 (stream-ref s 1)))
+          (cond ((= (weight-cubic s0) (weight-cubic s1))
+                  (stream-cons (weight-cubic s0)
+                  (iter (stream-rest (stream-rest s)))))
+                (else (iter (stream-rest s))))))
+  (define Ramanujan-number
+      (iter (weighted-pairs integers integers weight-cubic)))
+#+END_SRC
+
+分别是
+
+4104 13832 20683 32832 39312
+
+*** 3.72
+     :PROPERTIES:
+     :CUSTOM_ID: section-22
+     :END:
+
+修改iter即可
+
+#+BEGIN_SRC scheme
+  (define (iter s)
+      (let ((s0 (stream-ref s 0))
+            (s1 (stream-ref s 1))
+            (s2 (stream-ref s 2)))
+          (cond ((= (weight-cubic s0) (weight-cubic s1) (weight-cubic s2))
+                  (stream-cons (list (weight-cubic s0) s0 s1 s2)
+                  (iter (stream-rest (stream-rest (stream-rest s))))))
+                (else (iter (stream-rest s))))))
+#+END_SRC
+
+*** 3.73
+     :PROPERTIES:
+     :CUSTOM_ID: section-23
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (RC R C dt)
+      (lambda (i v0)
+          (add-stream (scale-stream i R)
+          (scale-stream (integral i v0 dt) (/ 1 C)))))
+#+END_SRC
+
+*** 3.74
+     :PROPERTIES:
+     :CUSTOM_ID: section-24
+     :END:
+
+#+BEGIN_SRC scheme
+  (define zero-crossings
+      (stream-map sign-change-detector sense-data (stream-cons 0 sense-data)))
+#+END_SRC
+
+*** 3.75
+     :PROPERTIES:
+     :CUSTOM_ID: section-25
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (make-zero-crossings input-stream last-value changed)
+      (let ((avpt (/ (+ (stream-first input-stream) last-value) 2)))
+          (stream-cons (sign-change-detector avpt changed)
+          (make-zero-crossings (stream-rest input-stream) avpt (stream-first input-stream)))))
+#+END_SRC
+
+*** 3.76
+     :PROPERTIES:
+     :CUSTOM_ID: section-26
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (smooth stream)
+      (let ((s0 (stream-ref stream 0))
+            (s1 (stream-ref stream 1)))
+          (stream-cons (average s0 s1)
+          (smooth (stream-rest stream)))))
+  (define zero-crossings
+      (stream-map sign-change-detector (smooth sense-data) (stream-cons 0 (smooth sense-data))))
+#+END_SRC
+
+*** 3.77
+     :PROPERTIES:
+     :CUSTOM_ID: section-27
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (integral delayed-intergrand initial-value dt)
+      (stream-cons initial-value
+          (let ((intergrand (force delayed-intergrand)))
+              (if (stream-empty? intergrand)
+                  `()
+                  (integral (delay (stream-rest intergrand))
+              (+ (* dt (stream-first intergrand))
+                  initial-value)
+                  dt)))))
+#+END_SRC
+
+*** 3.78
+     :PROPERTIES:
+     :CUSTOM_ID: section-28
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (solve-2nd a b dt y0 dy0)
+      (define y (integral (delay dy) y0 dt))
+      (define dy (integral (delay ddy) dy0 dt))
+      (define ddy (add-stream (scale-stream dy a) (scale-stream y b)))
+      y)
+#+END_SRC
+
+*** 3.79
+     :PROPERTIES:
+     :CUSTOM_ID: section-29
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (solve-2nd a b dt y0 dy0 f)
+      (define y (integral (delay dy) y0 dt))
+      (define dy (integral (delay ddy) dy0 dt))
+      (define ddy (stream-map f dy y))
+      y)
+#+END_SRC
+
+*** 3.80
+     :PROPERTIES:
+     :CUSTOM_ID: section-30
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (RLC R L C dt)
+      (lambda (vc0 il0)
+          ((define il (integral (delay dil) il0 dt))
+          (define vc (integral (delay dvc) vc0 dt))
+          (define dil (add-stream (scale-stream il (/ (- R) L)) (scale-stream vc (/ 1 L))))
+          (define dvc (scale-stream il (/ (- 1) C)))
+              (cons il vc))))
+#+END_SRC
+
+*** 3.81
+     :PROPERTIES:
+     :CUSTOM_ID: section-31
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (reset)
+      (lambda (n)
+          (rand n)))
+  (define (rand seed)
+      (define (generate stream)
+          (stream-rest stream))
+      (let ((stream (stream-cons seed
+            (stream-map random-update random-stream))))
+          (define (dispatch m)
+              (cond ((eq? m generate) (generate stream))
+                    ((eq? m reset) (reset))))
+          dispatch))
+#+END_SRC
+
+*** 3.82
+     :PROPERTIES:
+     :CUSTOM_ID: section-32
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (estimate-integral p x1 x2 y1 y2)
+      (define random-numbers-in-range
+          (merge (stream-filter (ranged x1 x2) random-numbers) (stream-filter (ranged y1 y2) random-numbers)))
+      (stream-map (lambda (x) (* x (- x2 x1) (- y2 y1)))
+          (monte-carlo (map-successive-pairs p random-numbers-in-range) 0 0)))
+#+END_SRC
+
+* CH4
+** 4.1 元循环求值器
+   :PROPERTIES:
+   :CUSTOM_ID: 元循环求值器
+   :END:
+
+*** 4.1
+     :PROPERTIES:
+     :CUSTOM_ID: section
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (list-of-values-left exps env)
+      (if (no-oprands? exps)
+          `()
+          (let ((first-value (eval (first-oprand exps) env)))
+              (cons first-value
+                  (list-of-values (rest-oprands exps) env)))))
+  (define (list-of-values-right exps env)
+      (if (no-oprands? exps)
+          `()
+          (let ((rest-value (list-of-values (rest-oprand exps) env)))
+              (cons (eval (first-oprand exps) env)
+                  rest-value))))
+#+END_SRC
+
+*** 4.2
+     :PROPERTIES:
+     :CUSTOM_ID: section-1
+     :END:
+
+a）
+Louis的计划将会使得所有赋值和定义被看作过程应用，这将使整个eval无法奏效。实际上，特殊形式基本上会拥有更高的优先级，如果我们一定要用条件判定的写法来写求值器，那特殊形式一定要放在开头。
+
+b） 只需要修改抽象过程
+
+#+BEGIN_SRC scheme
+  (define (application? exp) (tagged-list? exp `call))
+  (define (operator exp) (car (cdr exp)))
+  (define (operands exp) (cdr (cdr exp)))
+#+END_SRC
+
+*** 4.3
+     :PROPERTIES:
+     :CUSTOM_ID: section-2
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (eval exp env)
+      (if (self-evaluating? exp)
+          exp
+          (let ((proc (get 'eval (expr-type exp))))
+              (proc (expr-body exp) env))))
+#+END_SRC
+
+*** 4.4
+     :PROPERTIES:
+     :CUSTOM_ID: section-3
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (or? exp) (tagged-list? exp `or))
+  (define (and? exp) (tagged-list? exp `and))
+  (define (or-body exp) (cdr exp))
+  (define (and-body exp) (cdr exp))
+  (define (first-predicate exp) (car exp))
+  (define (rest-predicate exp) (car exp))
+  (define (eval-or clauses env)
+      (if (null? clauses)
+          #f
+          (if (true? (eval (first-predicate clauses) env))
+              #t
+              (eval-or (rest-predicate clauses) env))))
+  (define (eval-and clauses env)
+      (if (null? clauses)
+          #t
+          (if (false? (eval (first-predicate clauses) env))
+              #f
+              (eval-and (rest-predicate clauses) env))))
+#+END_SRC
+
+*** 4.5
+     :PROPERTIES:
+     :CUSTOM_ID: section-4
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (cond-form-predicate clause) (car clause))
+  (define (cond-form-process clause) (car (cdr (cdr clause))))
+  (define (cond-form stream env)
+      (if (null? (cdr stream))
+          (if (eq? `else (cond-form-predicate (car stream)))
+              (car (cdr (car stream)))
+              #f)
+          (let ((first (car stream))
+               (second (cdr stream))
+              (eval-value (eval (cond-form-predicate first) env)))
+              (cond ((eq? eval-value `else) (display "ERROR ELSE isn't an end. --COND-FORM" first))
+                    ((true? eval-value) ((cond-form-process first) eval-value))
+                    (else (cond-form second env))))))
+#+END_SRC
+
+*** 4.6
+     :PROPERTIES:
+     :CUSTOM_ID: section-5
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (let-variable-list exp) (car (cdr exp)))
+  (define (get-variable-list exp)
+      (if (null? exp)
+          `()
+          (cons (car (car exp))
+              (get-variable-list (cdr exp)))))
+  (define (get-arguments-list exp)
+      (if (null? exp)
+          `()
+          (cons (cdr (car exp))
+              (get-arguments-list (cdr exp)))))
+  (define (let->combination exp)
+      (append (make-lambda (get-variable-list (let-variable-list exp))
+          (car (cdr (cdr exp))))
+          (get-arguments-list (let-variable-list exp))))
+#+END_SRC
+
+*** 4.7
+     :PROPERTIES:
+     :CUSTOM_ID: section-6
+     :END:
+
+我们的求值环境模型告诉了我们，let是创建一个新的lambda环境来求值，要实现let*的效果，我们也就一定要创建相应的嵌套的环境结构。
+
+#+BEGIN_SRC scheme
+  (define (make-let variable-list)
+      (list `let variable-list))
+  (define (let*->nested-lets exp)
+      (let ((variable-list) (get-variable-list exp))
+          (define (iter result exp)
+              (cond ((null? (cdr exp)) (cons result (make-let (car exp))))
+                    (else (iter (cons result (make-let (car exp)))
+                              (cdr exp)))))
+          (iter `() variable-list)))
+#+END_SRC
+
+*** 4.8
+     :PROPERTIES:
+     :CUSTOM_ID: section-7
+     :END:
+
+实际上是再套了一层的let
+
+*** 4.9
+     :PROPERTIES:
+     :CUSTOM_ID: section-8
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (for? exp) (tagged-list? exp `for))
+  (define (for-to-lambda exp)
+      (let ((predicate (cadr exp))
+            (iter-function (caddr exp))
+            (function (cadddr exp))
+            (init-value (caddddr exp)))
+      `((define (lamdba-func it)
+          (cond (((not (predicate it)) `())
+                (else (begin function (lambda-func (iter-function it)))))))
+          (lambda-func init-value))))
+#+END_SRC
+
+Lisp with imperative（逃
+
+*** 4.10
+     :PROPERTIES:
+     :CUSTOM_ID: section-9
+     :END:
+
+与4.3重复
+
+*** 4.11
+     :PROPERTIES:
+     :CUSTOM_ID: section-10
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (make-frame variables values)
+      (if (null? variables)
+          `()
+          (cons (cons (car variables) (car values))
+              (make-frame (cdr variables) (cdr values)))))
+  (define (frame-variables frame) (car frame))
+  (define (frame-values frame) (cdr frame))
+  (define (add-binding-to-frame! var val frame)
+      (set! frame (cons (cons var val) frame)))
+#+END_SRC
+
+*** 4.12
+     :PROPERTIES:
+     :CUSTOM_ID: section-11
+     :END:
+
+抽象模式就是对环境的遍历，因此我们可以将scan独立为一个过程
+
+*** 4.13
+     :PROPERTIES:
+     :CUSTOM_ID: section-12
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (make-unbound var env)
+      (let ((frame (first-frame env)))
+          (define (scan vars vals)
+              (cond ((null? vars 
+                      (display "No such variables in scope" var)))
+                    ((eq? var (car vars)) (set-cdr! vals (cdr vals)) (set-cdr! vars (cdr vars)))
+                    (else scan (cdr vars) (cdr vals))))
+          (scan (frame-variables frame)
+                (frame-values frame))))
+#+END_SRC
+
+根据作用域的原则，建议只删除当前框架里的变量绑定
+
+*** 4.14
+     :PROPERTIES:
+     :CUSTOM_ID: section-13
+     :END:
+
+在这里使用map的系统定义可能会造成以下的错误：
+
+由于系统的map参数是任意的，一旦我们把它作为普通的过程来处理，就会发生不能正确接收参数的问题。
+
+*** 4.15
+     :PROPERTIES:
+     :CUSTOM_ID: section-14
+     :END:
+
+这个问题的表述就是图灵的停机问题。
+
+对于try，我们求值它本身，如果它确实是可停止的，那么try又会执行下去，而如果try是不可停止的，那么我们的halted会使它停止。
+
+形式化的表述为：
+
+/K/ = {(/i/, /x/) | program /i/ halts when run on input /x/}
+
+Prove K is undecidable.
+
+*** 4.16
+     :PROPERTIES:
+     :CUSTOM_ID: section-15
+     :END:
+
+#+BEGIN_SRC scheme
+  ((eq? var (car vars))  
+      (if (eq? (car vals) '*unassigned*) 
+          (error "variable is unassigned" var) 
+          (car vals)))
+#+END_SRC
+
+安裝在make-procedure更好一些，這樣效率更高
+
+*** 4.17
+     :PROPERTIES:
+     :CUSTOM_ID: section-16
+     :END:
+
+这个额外的框架是let构建出来的。解决方法是文法替换将定义放在开头进行上下顺序解析
+
+*** 4.18
+     :PROPERTIES:
+     :CUSTOM_ID: section-17
+     :END:
+
+不可以，因为let语句是会求值的，一旦我们不延迟定义函数体，就会因找不到过程而错误。
+
+*** 4.19
+     :PROPERTIES:
+     :CUSTOM_ID: section-18
+     :END:
+
+在一个急切求值的MIT Scheme中，实现Eva的想法是非常困难的。
+
+*** 4.20
+     :PROPERTIES:
+     :CUSTOM_ID: section-19
+     :END:
+
+#+BEGIN_SRC scheme
+   (define (letrec? expr) (tagged-list? expr 'letrec)) 
+   (define (letrec-inits expr) (cadr expr)) 
+   (define (letrec-body expr) (cddr expr)) 
+   (define (declare-variables expr) 
+           (map (lambda (x) (list (car x) '*unassigned*)) (letrec-inits expr))) 
+   (define (set-variables expr) 
+           (map (lambda (x) (list 'set! (car x) (cadr x))) (letrec-inits expr))) 
+   (define (letrec->let expr) 
+           (list 'let (declare-variables expr)  
+                  (make-begin (append (set-variables expr) (letrec-body expr))))) 
+#+END_SRC
+
+本质是一个不能被求值的let 参考4.16
+
+*** 4.21
+     :PROPERTIES:
+     :CUSTOM_ID: section-20
+     :END:
+
+Magic Y combinator
+
+#+BEGIN_SRC scheme
+  ((lambda (n)
+      ((lambda (fib)
+          (fib fib n))
+          (lambda (body k)
+              (cond ((= k 0) 0)
+                    ((= k 1) 1)
+                    (else (+ (body body (- k 1))
+                              (body body (- k 2)))))))) 5)
+
+  (define (f x)
+      ((lambda (even? odd?)
+          (even? even? odd? x))
+          (lambda (ev? od? n)
+              (if (= n 0) true (od? ev? od? (- n 1))))
+              (lambda (ev? od? n)
+                  (if (= n 0) false (ev? ev? od? (- n 1))))))
+
+   (define Y-combinator 
+     (lambda (f) 
+       ((lambda (x) (x x)) 
+        (lambda (x) (f (lambda (y) ((x x) y)))))))
+#+END_SRC
+
+*** 4.22
+     :PROPERTIES:
+     :CUSTOM_ID: section-21
+     :END:
+
+((let? expr) (analyze (let->combination expr)))
+
+*** 4.23
+     :PROPERTIES:
+     :CUSTOM_ID: section-22
+     :END:
+
+这个程序在一个表达式的时候依然是有优势的，但是在两个及以上的时候，它会重复的执行递归和返回执行，这本质上是把执行的步骤放在了语法分析里做了，这样做会减慢速度。
+
+*** 4.24
+     :PROPERTIES:
+     :CUSTOM_ID: section-23
+     :END:
+
+由于我的MIT Scheme实现问题，暂时无法完成这道题目。
+
+** 4.2 Scheme的变形------惰性求值
+   :PROPERTIES:
+   :CUSTOM_ID: scheme的变形惰性求值
+   :END:
+
+*** 4.25
+     :PROPERTIES:
+     :CUSTOM_ID: section
+     :END:
+
+在应用序的语言中，由于严格求值的存在，即使是到达1也不会停止，而会继续求求值第一个表达式。
+
+而在正则序语言中则可以工作的良好。
+
+*** 4.26
+     :PROPERTIES:
+     :CUSTOM_ID: section-1
+     :END:
+
+unless实际上就是个调换了执行顺序的if，实现如下
+
+#+BEGIN_SRC scheme
+  (define (eval-unless exp env)
+      (if (false? (eval (if-predicate exp) env))
+          (eval (if-consequent exp) env)
+          (eval (if-alternative exp) env)))
+#+END_SRC
+
+例子：将其作为map等高阶函数的参数时。
+
+*** 4.27
+     :PROPERTIES:
+     :CUSTOM_ID: section-2
+     :END:
+
+第一次调用count，得到值0
+
+调用w得到10
+
+调用count得到1，因为外面的赋值结果会被里面的覆盖，槽中的count传入都为0
+
+*** 4.28
+     :PROPERTIES:
+     :CUSTOM_ID: section-3
+     :END:
+
+如果我们不将运算符求值，传入高阶函数的过程会被打入槽标记，再进一步进入apply的时候就会出错。
+
+*** 4.29
+     :PROPERTIES:
+     :CUSTOM_ID: section-4
+     :END:
+
+典型的运用记忆优势的就是斐波那契了。
+
+不带记忆的话，id会被求值两次，因此也就count变为2，否则为1
+
+*** 4.30
+     :PROPERTIES:
+     :CUSTOM_ID: section-5
+     :END:
+
+因为这个问题决定于归纳到基本过程的方式，我们的槽结构并没有丢失函数的处理，而仅仅是推迟了。
+
+（1 2） 1
+
+（1 2） （1 2）
+
+显然不会有影响
+
+我觉得一个纯的惰性求值语言应该有更有效地处理副作用的方法，或者根本就是抛弃它，而不是破坏语言的纯粹性。（更好的方法寻找？）
+
+*** 4.31
+     :PROPERTIES:
+     :CUSTOM_ID: section-6
+     :END:
+
+搁置
+
+*** 4.32
+     :PROPERTIES:
+     :CUSTOM_ID: section-7
+     :END:
+
+比如说，我们现在需要整数立方序列的第114514项，那么前114513项都不需要求值。
+
+*** 4.33
+     :PROPERTIES:
+     :CUSTOM_ID: section-8
+     :END:
+
+搁置
+
+*** 4.34
+     :PROPERTIES:
+     :CUSTOM_ID: section-9
+     :END:
+
+搁置
+
+** 4.3 Scheme的变形------非确定性计算
+   :PROPERTIES:
+   :CUSTOM_ID: scheme的变形非确定性计算
+   :END:
+
+*** 4.35
+     :PROPERTIES:
+     :CUSTOM_ID: section
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (an-interger-between low high)
+      (require (<= low high))
+      (amb low (an-interger-between (+ low 1) high)))
+#+END_SRC
+
+*** 4.36
+     :PROPERTIES:
+     :CUSTOM_ID: section-1
+     :END:
+
+因为三角形边的限制，我们将high定为（i+j），然后不断地放大low就能确实的找出所有的毕达哥拉斯三元组。
+
+*** 4.37
+     :PROPERTIES:
+     :CUSTOM_ID: section-2
+     :END:
+
+这个过程省去了一个寻找k的分支，但是随之带来的是一次开方运算的消耗。
+
+取决于数据大小
+
+*** 4.38
+     :PROPERTIES:
+     :CUSTOM_ID: section-3
+     :END:
+
+这个谜题有5个解
+
+*** 4.39
+     :PROPERTIES:
+     :CUSTOM_ID: section-4
+     :END:
+
+不会影响答案，但是会影响找到答案的时间。
+
+distinct放在最后一个约束应该会更快，因为其他的运算都是数学运算，而distinct是个查找运算。
+
+*** 4.40
+     :PROPERTIES:
+     :CUSTOM_ID: section-5
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (logical-solving)
+      (let ((fletcher (amb 2 3 4))
+            (cooper (amb 2 3 4 5))
+            (baker (amb 1 2 3 4))
+            (miller (amb 1 2 3 4 5)))
+          (require (> miller cooper))
+          (require (not (= (abs (- fletcher cooper)) 1)))
+          (let ((smith (amb 1 2 3 4 5)))
+              (require (not (= (abs (- fletcher smith)) 1)))
+              (list (list `baker baker)
+                    (list `cooper cooper)
+                    (list `fletcher fletcher)
+                    (list `miller miller)
+                    (list `smith smith)))))
+#+END_SRC
+
+*** 4.41
+     :PROPERTIES:
+     :CUSTOM_ID: section-6
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (get-combination list)
+      (if (null? list)
+          `()
+          (flatmap (lambda (x) (map (lambda (y) (cons x y)) (get-combination (cdr list))))
+              (car list))))
+   (define (restrictions l) 
+     (apply 
+       (lambda (baker cooper fletcher miller smith) 
+         (and (> miller cooper) 
+           (not (= (abs (- smith fletcher)) 1)) 
+           (not (= (abs (- fletcher cooper)) 1)) 
+           (distinct? (list baker cooper fletcher miller smith)))) 
+       l))
+  (define (mutiple-dwelling) 
+     (let ((baker '(1 2 3 4)) 
+           (cooper '(2 3 4 5)) 
+           (fletcher '(2 3 4)) 
+           (miller '(3 4 5)) 
+           (smith '(1 2 3 4 5))) 
+       (filter restrictions (get-combination (list baker cooper fletcher miller smith))))) 
+#+END_SRC
+
+*** 4.42
+     :PROPERTIES:
+     :CUSTOM_ID: section-7
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (xor a b)
+      (or (and (not a) b) (and a (not b))))
+  (define (solve)
+      (let ((betty (amb 1 2 3 4 5))
+            (esier (amb 1 2 3 4 5))
+            (jone  (amb 1 2 3 4 5))
+            (ketty (amb 1 2 3 4 5))
+            (mary  (amb 1 2 3 4 5)))
+          (require (xor (= ketty 2) (= betty 3)))
+          (require (xor (= esier 1) (= jone  2)))
+          (require (xor (= jone  3) (= esier 5)))
+          (require (xor (= ketty 2) (= mary  4)))
+          (require (xor (= mary  4) (= betty 1)))
+          (require (distinct? (list betty esier jone ketty mary)))
+          (list (cons `betty betty)
+                (cons `esier esier)
+                (cons `jone  jone )
+                (cons `ketty ketty)
+                (cons `mary  mary ))))
+#+END_SRC
+
+*** 4.43
+     :PROPERTIES:
+     :CUSTOM_ID: section-8
+     :END:
+
+#+BEGIN_SRC scheme
+   (define (father-daughter) 
+     (let ((Moore 'Mary) 
+           (Barnacle 'Melissa) 
+           (Hall (amb 'Gabrielle 'Lorna)) 
+           (Downing (amb 'Gabrielle 'Lorna 'Rosalind)) 
+           (Parker (amb 'Lorna 'Rosalind))) 
+       (require (cond ((eq? Hall 'Gabrielle) (eq? 'Rosalind Parker)) 
+                      ((eq? Downing 'Gabrielle) (eq? 'Melissa Parker)) 
+                      (else false))) 
+       (require (distinct? (list Hall Downing Parker))) 
+       (list (list 'Barnacle Barnacle) 
+             (list 'Moore Moore) 
+             (list 'Hall Hall) 
+             (list 'Downing Downing) 
+             (list 'Parker Parker)))) 
+#+END_SRC
+
+*** 4.44
+     :PROPERTIES:
+     :CUSTOM_ID: section-9
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (queens board-size)
+   (define (new-queen a b) 
+       (require (<= a b)) 
+       (amb a (new-queen (+ a 1) b))) 
+    (define (iter positions)
+      (require (distinct? (map cdr positions)))
+      (require (distinct? (map (lambda (q) (- (car q) (cdr q))) positions)))
+      (require (distinct? (map (lambda (q) (+ (car q) (cdr q))) positions)))
+      (if (= board-size (length positions))
+          (reverse (map cdr positions))
+          (iter (cons (new-queen 1 board-size) positions))))
+    (iter '()))
+#+END_SRC
+
+*** 4.45
+     :PROPERTIES:
+     :CUSTOM_ID: section-10
+     :END:
+
+五种情况很容易想见.
+
+*** 4.46
+     :PROPERTIES:
+     :CUSTOM_ID: section-11
+     :END:
+
+从右往左的求值顺序会使得amb只求值不返回选择
+
+*** 4.47
+     :PROPERTIES:
+     :CUSTOM_ID: section-12
+     :END:
+
+因为scheme是急切求值的，这个程序会陷入死循环
+
+*** 4.48
+     :PROPERTIES:
+     :CUSTOM_ID: section-13
+     :END:
+
+#+BEGIN_SRC scheme
+   (define (parse-simple-noun-phrase)       
+         (amb (list 'simple-noun-phrase 
+                    (parse-word articles) 
+                    (parse-word nouns)) 
+                   (list 'simple-noun-phrase 
+                    (parse-word articles) 
+                    (parse-word adjectives) 
+                    (parse-word nouns)))) 
+#+END_SRC
+
+*** 4.49
+     :PROPERTIES:
+     :CUSTOM_ID: section-14
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (parse-word word-list)
+      (require (not (null? *unparsed*)))
+      (let ((found-word (amb (cadr word-list) (cddr word-list))))
+          (set! *unparsed* (cdr *unparsed*))
+          (list (car word-list) found-word)))
+#+END_SRC
+
+*** 4.50
+     :PROPERTIES:
+     :CUSTOM_ID: section-15
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (analyze-ramb exp)
+      (let ((cprocs (map analyze (amb-choices exp))))
+          (lambda (env succeed fail)
+              (define (try-next choices)
+                  (if (null? choices)
+                      (fail)
+                      (let ((randref (rand (length choices))))
+                          ((list-ref (- randref 1))
+                           env
+                           succeed
+                           (lambda () (try-next (del-list choices randref)))))))
+              (try-next cprocs))))
+#+END_SRC
+
+*** 4.51
+     :PROPERTIES:
+     :CUSTOM_ID: section-16
+     :END:
+
+只需再赋值的fail继续前删除回溯语句
+
+使用set的话，cnt会一直是2
+
+*** 4.52
+     :PROPERTIES:
+     :CUSTOM_ID: section-17
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (analyze-if-fail exp)
+      (let ((cprocs (analyze (cadr  exp)))
+            (aprocs (analyze (caddr exp))))
+          (lambda (env succeed fail)
+              (cprocs
+                  env
+                  (lambda (evalue fail2)
+                      (evalue proc succeed fail2))
+                  (aprocs proc succeed fail)))))
+#+END_SRC
+
+*** 4.53
+     :PROPERTIES:
+     :CUSTOM_ID: section-18
+     :END:
+
+会获取到所有的素数对
+
+这意味着，即使是非确定性求值，在经过简单的修改以后也能够有输出所有可能性的能力。
+
+*** 4.54
+     :PROPERTIES:
+     :CUSTOM_ID: section-19
+     :END:
+
+#+BEGIN_SRC scheme
+  (false? pred-value)
+  fail
+#+END_SRC
+** 4.4 逻辑程序设计
+   :PROPERTIES:
+   :CUSTOM_ID: 逻辑程序设计
+   :END:
+
+*** 4.55
+     :PROPERTIES:
+     :CUSTOM_ID: section
+     :END:
+
+1) (supervisor ?x (Ben Bitdiddle))
+
+2) (job ?x (accounting . ?type)
+
+3) (address ?x (Slumerville ?y ?z))
+
+*** 4.56
+     :PROPERTIES:
+     :CUSTOM_ID: section-1
+     :END:
+
+1) (and (address ?x ?y)
+
+(supervisor ?x (Ben Bitdiddle))
+
+2) (or (salary (Ben Bitdiddle) ?x)
+
+(and (salary ?person ?y)
+
+(lisp-value < ?y ?x)))
+
+3) (and (job ?x (not (computer .?type)))
+
+(supervisior ?x ?y))
+
+*** 4.57
+     :PROPERTIES:
+     :CUSTOM_ID: section-2
+     :END:
+
+#+BEGIN_SRC scheme
+  (rule (replace ?x ?y)
+      (and (job ?x ?job1)
+           (job ?y ?job2)
+           (or (same? ?job1 ?job2)
+               (can-do-job ?job1 ?job2))))
+  (and (rule ?x ?y)
+      (salary ?x ?s1)
+      (salary ?y ?s2)
+      (replace ?x ?y)
+      (lisp-value < ?s1 ?s2))
+#+END_SRC
+
+*** 4.58
+     :PROPERTIES:
+     :CUSTOM_ID: section-3
+     :END:
+
+#+BEGIN_SRC scheme
+  (rule (big-wheel ?x ?dep)
+      (and (job ?x (?dep .?type))
+           (not (supervisior ?x ?y))))
+#+END_SRC
+
+*** 4.59
+     :PROPERTIES:
+     :CUSTOM_ID: section-4
+     :END:
+
+#+BEGIN_SRC scheme
+  (rule (meeting-time ?person ?day-and-time)
+      (or (meeting whole-company ?day-and-time)
+           (and (job ?person (?dep . ?type))
+                (meeting ?dep ?day-and-time))))
+#+END_SRC
+
+*** 4.60
+     :PROPERTIES:
+     :CUSTOM_ID: section-5
+     :END:
+
+搁置
+
+*** 4.61
+     :PROPERTIES:
+     :CUSTOM_ID: section-6
+     :END:
+
+#+BEGIN_SRC scheme
+  (1 next-to (2 3) in (1 (2 3) 4))
+  ((2 3) next-to 4 in (1 (2 3) 4))
+
+  (2 next-to 1 in (2 1 3 1))
+  (3 next-to 1 in (2 1 3 1))
+#+END_SRC
+
+*** 4.62
+     :PROPERTIES:
+     :CUSTOM_ID: section-7
+     :END:
+
+#+BEGIN_SRC scheme
+  (rule (last-pair (?x) (?x)))
+  (rule (last-pair (?u . ?v) (?x)) 
+          (last-pair ?v (?x)))
+#+END_SRC
+
+这个程序不能逆向推断
+
+*** 4.63
+     :PROPERTIES:
+     :CUSTOM_ID: section-8
+     :END:
+
+#+BEGIN_SRC scheme
+  (rule (father ?s ?f) 
+          (or (son ?f ?s) 
+              (and (son ?w ?s) 
+                  (wife ?f ?w))))
+    
+  (rule (grandson ?g ?s) 
+          (and (father ?s ?f) 
+              (father ?f ?g)))
+#+END_SRC
+
+*** 4.64
+     :PROPERTIES:
+     :CUSTOM_ID: section-9
+     :END:
+
+可以看出这个规则系统一定要是尾递归的，因为这样会使得Ben不断在staff-person和middlemanager之间做替换。
+
+*** 4.65
+     :PROPERTIES:
+     :CUSTOM_ID: section-10
+     :END:
+
+因为他同时作为了多个管理者的管理者，在合并流的时候并不会去重
+
+*** 4.66
+     :PROPERTIES:
+     :CUSTOM_ID: section-11
+     :END:
+
+问题一样出在去重上，一个值会被累积多次。加一个去重过滤器，方法是检验第一个值是否在余下的流之中出现。
+
+*** 4.67
+     :PROPERTIES:
+     :CUSTOM_ID: section-12
+     :END:
+
+搁置
+
+*** 4.68
+     :PROPERTIES:
+     :CUSTOM_ID: section-13
+     :END:
+
+#+BEGIN_SRC scheme
+  (rule (reverse `() `()))
+  (rule (reverse (?u . ?v) ?y)
+      (append-to-form ?v ?u ?y))
+#+END_SRC
+
+*** 4.69
+     :PROPERTIES:
+     :CUSTOM_ID: section-14
+     :END:
+
+#+BEGIN_SRC scheme
+  (rule (end-in-grandson (grandson))) 
+  (rule (end-in-grandson (?x . ?rest)) 
+         (end-in-grandson ?rest)) 
+  (rule ((grandson) ?x ?y) 
+         (grandson ?x ?y)) 
+  (rule ((great . ?rel) ?x ?y) 
+         (and (end-in-grandson ?rel) 
+              (son ?x ?z) 
+              (?rel ?z ?y)))
+#+END_SRC
+
+*** 4.70
+     :PROPERTIES:
+     :CUSTOM_ID: section-15
+     :END:
+
+因为这样会把数据流全部求值
+
+*** 4.71
+     :PROPERTIES:
+     :CUSTOM_ID: section-16
+     :END:
+
+这就是之前所提到过的一些无限循环的规则，如果不delay的话，就会产生无穷流而没有输出。
+
+*** 4.72
+     :PROPERTIES:
+     :CUSTOM_ID: section-17
+     :END:
+
+同样，是为了防止一个流是无穷流的情况
+
+*** 4.73
+     :PROPERTIES:
+     :CUSTOM_ID: section-18
+     :END:
+
+同4.72
+
+*** 4.74
+     :PROPERTIES:
+     :CUSTOM_ID: section-19
+     :END:
+
+#+BEGIN_SRC scheme
+  Stream-car
+  (lambda (s) (not (stream-null? S)))
+#+END_SRC
+
+*** 4.75
+     :PROPERTIES:
+     :CUSTOM_ID: section-20
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (uniquely-asserted pattern frame-stream) 
+    (stream-flatmap 
+     (lambda (frame) 
+      (let ((stream (qeval (negated-query pattern) 
+                      (singleton-stream frame)))) 
+           (if (singleton-stream? stream) 
+               stream 
+               the-empty-stream))) 
+     frame-stream)) 
+  (put 'unique 'qeval uniquely-asserted) 
+    
+  (define (singleton-stream? s) 
+    (and (not (stream-null? s)) 
+         (stream-null? (stream-cdr s)))) 
+#+END_SRC
+
+*** 4.76
+     :PROPERTIES:
+     :CUSTOM_ID: section-21
+     :END:
+
+直接调用合一规则即可
+
+*** 4.77
+     :PROPERTIES:
+     :CUSTOM_ID: section-22
+     :END:
+
+搁置
+
+*** 4.78
+     :PROPERTIES:
+     :CUSTOM_ID: section-23
+     :END:
+
+搁置
+
+*** 4.79
+     :PROPERTIES:
+     :CUSTOM_ID: section-24
+     :END:
+
+见SOFTWARE FOUNDATIONS
+
+一个问题求解系统往往基于数理逻辑的一个规则预载，并且尝试着将它们与目前输入的推断做匹配。
+
+当然这个问题是永无止境的，我们甚至可以在环境中搭载自己所定义的新断言，然后试着做蕴含推理。
+
+* CH5
+** 5.1 一个寄存器机器模拟器
+   :PROPERTIES:
+   :CUSTOM_ID: 一个寄存器机器模拟器
+   :END:
+
+*** 5.1
+     :PROPERTIES:
+     :CUSTOM_ID: section
+     :END:
+
+自行模拟~
+
+*** 5.2
+     :PROPERTIES:
+     :CUSTOM_ID: section-1
+     :END:
+
+#+BEGIN_SRC scheme
+  (data-paths
+      (registers
+          ((name res)
+              (buttons ((name res<-mult (source (operation mult)))))
+           (name n)
+              (buttons ((name n<-plus1 (source (operation plus1)))))))
+      (operations
+          ((name mult)
+              (inputs (register n) (register res)))
+          ((name plus1)
+              (inputs (register n) (constant 1)))
+          ((name =)
+              (inputs (register n) (constant cnt)))))
+  (controller
+      test-n
+          (test =)
+          (branch (label fac-done))
+          (res<-mult)
+          (n<-plus1)
+          (goto (label test-n))
+      fac-done)
+#+END_SRC
+
+*** 5.3
+     :PROPERTIES:
+     :CUSTOM_ID: section-2
+     :END:
+
+#+BEGIN_SRC scheme
+  (data-paths
+      (registers
+          ((name guess)
+              (buttons ((name guess<-ave) (source (operation ave)))))
+          ((name x)))
+      (operations
+          ((name squ)
+              (inputs (register guess)))
+          ((name -)
+              (inputs (operation squ) (register x)))
+          ((name <)
+              (inputs (operation -) (constant eps)))
+          ((name /)
+              (inputs (register x) (register guess)))
+          ((name ave)
+              (inputs (register guess) (operation /)))))
+  (controller
+      test-guess
+      (test (op <) (op -) (constant eps))
+      (branch (label sqrt-done))
+      (assign guess (op ave) (reg guess) (op /))
+      (goto (label test-guess))
+      sqrt-done)
+#+END_SRC
+
+*** 5.4
+     :PROPERTIES:
+     :CUSTOM_ID: section-3
+     :END:
+
+#+BEGIN_SRC scheme
+  (controller
+      (assign continue (label exp-done))
+      exp-loop
+      (test (op =) (reg n) (const 0))
+      (branch (label assign-case))
+      (save continue)
+      (assign n (op -) (reg n) (const 1))
+      (assign continue (label after-exp))
+      (goto (label exp-loop))
+      after-exp
+      (assign val (op *) (reg b) (reg val))
+      (goto (label continue))
+      assign-case
+      (assign val (const 1))
+      (goto (label continue))
+      exp-done)
+
+  (controller
+      (assign val (const 1))
+      test-cnt
+      (test (op =) (reg cnt) (const 0))
+      (branch (label exp-done))
+      (assign val (op *) (reg val) (reg b))
+      (assign cnt (op -) (reg cnt) (const 1))
+      (goto (label test-cnt))
+      exp-done)
+#+END_SRC
+
+*** 5.5
+     :PROPERTIES:
+     :CUSTOM_ID: section-4
+     :END:
+
+请自行模拟
+
+*** 5.6
+     :PROPERTIES:
+     :CUSTOM_ID: section-5
+     :END:
+
+Fib-loop 中的save n和after-fib-1中的restore n可以删去
+
+** 5.2 一个寄存器机器模拟器
+   :PROPERTIES:
+   :CUSTOM_ID: 一个寄存器机器模拟器
+   :END:
+
+*** 5.7
+     :PROPERTIES:
+     :CUSTOM_ID: section
+     :END:
+
+#+BEGIN_SRC scheme
+  (define exp-machine
+      (make-machine
+          `(cnt b val)
+          (list (list `* *) (list `= =) (list `- -))
+          `((assign val (const 1))
+              test-cnt
+              (test (op =) (reg cnt) (const 0))
+              (branch (label exp-done))
+              (assign val (op *) (reg val) (reg b))
+              (assign cnt (op -) (reg cnt) (const 1))
+              (goto (label test-cnt))
+              exp-done)))
+#+END_SRC
+
+*** 5.8
+     :PROPERTIES:
+     :CUSTOM_ID: section-1
+     :END:
+
+由于extract的fold-right积累和assoc的fold-left查找，应该是第一个here被执行了，答案为3
+
+只需在cons label之前assoc以下
+
+*** 5.9
+     :PROPERTIES:
+     :CUSTOM_ID: section-2
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (make-operation-exp expr machine labels operations) 
+    (let ((op (lookup-prim (operation-exp-op expr) operations)) 
+              (aprocs 
+                   (map (lambda (e) 
+                             (if (label-exp? e) 
+                                 (error "can't operate on label -- MAKE-OPERATION-EXP" e) 
+                                 (make-primitive-exp e machine labels))) 
+                        (operation-exp-operands expr)))) 
+     (lambda () 
+             (apply op (map (lambda (p) (p)) aprocs))))) 
+#+END_SRC
+
+*** 5.10
+     :PROPERTIES:
+     :CUSTOM_ID: section-3
+     :END:
+
+搁置
+
+*** 5.11
+     :PROPERTIES:
+     :CUSTOM_ID: section-4
+     :END:
+
+删除（assign n （reg val）） 的操作
+
+#+BEGIN_SRC scheme
+   (define (allocate-stack name) 
+           (if (assoc name stack-table) 
+               (error "Multiply defined stacks: " name) 
+               (set! stack-table 
+                     (cons 
+                       (list name 
+                             (make-stack)) 
+                       stack-table))) 
+           'stack-allocated) 
+    
+   (for-each (lambda (reg-name)
+                   ((machine 'allocate-stack) 
+                    reg-name)) 
+                 register-names) 
+    
+   (the-ops 
+      (list (list 'initialize-stack 
+                  (lambda () 
+                         (for-each (lambda (stack) 
+                                     (stack 'initialize)) 
+                                   (map cadr stack-table)))))) 
+#+END_SRC
+
+*** 5.12
+     :PROPERTIES:
+     :CUSTOM_ID: section-5
+     :END:
+
+搁置
+
+*** 5.13
+     :PROPERTIES:
+     :CUSTOM_ID: section-6
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (lookup-register name) 
+        (let ((val (assoc name register-table))) 
+         (if val 
+             (cadr val) 
+             (begin 
+              (allocate-register name) 
+              (lookup-register name))))) 
+#+END_SRC
+
+随用随定义，漂亮的思想
+
+*** 5.14
+     :PROPERTIES:
+     :CUSTOM_ID: section-7
+     :END:
+
+F(n) = 2(n - 1)
+
+*** 5.15
+     :PROPERTIES:
+     :CUSTOM_ID: section-8
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (excute)
+      (let ((lists (get-contents pc)))
+          (if (null? lists)
+              `done
+              (begin  
+                  ((instruction-execution-proc (car insts)))
+                  (set! counter (+ counter 1))
+                  (excute)))))
+  (define (print-cnt)
+      (display "Execution Times : " counter)
+      ((set! counter 0)))
+#+END_SRC
+
+*** 5.16
+     :PROPERTIES:
+     :CUSTOM_ID: section-9
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (excute)
+      (let ((lists (get-contents pc)))
+          (if (null? lists)
+              `done
+              (begin  
+                  (if trace-on
+                      (display (caar insts)))
+                  ((instruction-execution-proc (car insts)))
+                  (set! counter (+ counter 1))
+                  (excute)))))
+#+END_SRC
+
+*** 5.17
+     :PROPERTIES:
+     :CUSTOM_ID: section-10
+     :END:
+
+#+BEGIN_SRC scheme
+  (define (excute)
+      (let ((lists (get-contents pc)))
+          (if (null? lists)
+              `done
+              (begin  
+                  (if trace-on
+                      (display current-label)
+                      (display (caar insts)))
+                  ((instruction-execution-proc (car insts)))
+                  (set! counter (+ counter 1))
+                  (if (or (tagged-list? (instruction-text inst) 'goto) 
+                            (and (tagged-list? (instruction-text inst) 'branch) 
+                                 (get-contents flag))) 
+                        (set! current-label 
+                              (label-exp-label (cadr (instruction-text))))) 
+                  (excute)))))
+#+END_SRC
+
+*** 5.18
+     :PROPERTIES:
+     :CUSTOM_ID: section-11
+     :END:
+
+给寄存器的消息分发定义一个打印函数即可
+
+*** 5.19
+     :PROPERTIES:
+     :CUSTOM_ID: section-12
+     :END:
+
+使用一个表格保存断点
+
+在excute的时候assoc断点表查看该不该停止
+
+proceed就是调用excute，在这之前把这个断点设置为false
+
+这个想法有一定的不完善度，因为它无法单步执行。
+** 5.3 存储分配和废料收集
+   :PROPERTIES:
+   :CUSTOM_ID: 存储分配和废料收集
+   :END:
+
+*** 5.20
+     :PROPERTIES:
+     :CUSTOM_ID: section
+     :END:
+
+x指向p1
+
+y有两个p1在 cars 和一个p2在 cdrs
+
+*** 5.21
+     :PROPERTIES:
+     :CUSTOM_ID: section-1
+     :END:
+
+#+BEGIN_SRC scheme
+      start 
+      (assign continue (label done)) 
+      (assign n (const 0)) 
+      count-loop 
+      (test (op null?) (reg lst)) 
+      (branch (label null)) 
+      (test (op not-pair?) (reg lst)) 
+          (branch (label not-pair)) 
+          (save continue) 
+          (assign continue (label after-car)) 
+          (save lst) 
+          (assign lst (op car) (reg lst)) 
+          (goto (label count-loop)) 
+        after-car 
+          (restore lst) 
+          (assign lst (op cdr) (reg lst)) 
+          (assign continue (label after-cdr)) 
+          (save val) 
+          (goto (label count-loop)) 
+        after-cdr 
+          (restore n) 
+          (restore continue) 
+          (assign val 
+                  (op +) (reg val) (reg n)) 
+          (goto (reg continue)) 
+      null 
+      (assign val (const 0)) 
+      (goto (reg continue)) 
+      not-pair 
+      (assign val (const 1)) 
+      (goto (reg continue)) 
+      done
+#+END_SRC
+
+*** 5.22
+     :PROPERTIES:
+     :CUSTOM_ID: section-2
+     :END:
+
+#+BEGIN_SRC scheme
+      (assign continue (label append-done)) 
+      loop 
+      (test (op null?) (reg x)) 
+      (branch (label null-x)) 
+      (save continue) 
+      (assign continue (label cdr-done)) 
+      (assign car-x (op car) (reg x)) 
+      (save car-x) 
+      (assign x (op cdr) (reg x)) 
+      (goto (label loop)) 
+      null-x 
+      (assign x (reg y)) 
+      (goto (reg continue)) 
+      cdr-done 
+      (restore car-x) 
+      (assign x (op cons) (reg car-x) (reg x)) 
+      (restore continue) 
+      (goto (reg continue)) 
+      append-done
+#+END_SRC
+
+
+** 5.4 显示控制的求值器
+   :PROPERTIES:
+   :CUSTOM_ID: 显示控制的求值器
+   :END:
+
+*** 5.23
+     :PROPERTIES:
+     :CUSTOM_ID: section
+     :END:
+
+#+BEGIN_SRC scheme
+  (test (op cond?) (reg expr)) 
+  (branch (label ev-cond)) 
+    
+  ev-cond 
+  (assign expr (op cond->if) (reg expr)) 
+  (goto (label ev-if))
+#+END_SRC
+
+*** 5.24
+     :PROPERTIES:
+     :CUSTOM_ID: section-1
+     :END:
+
+#+BEGIN_SRC scheme
+   ev-cond 
+   (assign expr (op cond-clauses) (reg expr)) 
+   (test (op null?) (reg expr))   
+   (branch (label ev-cond-end)) 
+   (assign unev (op car) (reg expr)) 
+   (assign expr (op cdr) (reg expr)) 
+   (test (op cond-else-clauses?) (reg unev)) 
+   (branch (label cond-else)) 
+   (save env) 
+   (save continue) 
+   (save unev) 
+   (save expr) 
+   (assign continue (label ev-cond-loop)) 
+   (assign expr (op cond-predicate) (reg unev)) 
+   (goto (label ev-dispatch)) 
+    
+   ev-cond-loop 
+   (restore expr) 
+   (test (op true?) (reg val)) 
+   (branch (label cond-result)) 
+   (restore unev) 
+   (restore continue) 
+   (restore env) 
+   (goto (label ev-cond)) 
+   cond-result 
+   (restore unev) 
+   (assign expr (op cond-actions) (reg unev)) 
+   (assign expr (op sequence->exp) (reg expr)) 
+   (goto (label ev-dispatch)) 
+    
+   cond-else 
+   (assign unev (op cond-actions) (reg unev)) 
+   (assign expr (op sequence->exp) (reg unev)) 
+   (goto (label ev-dispatch)) 
+    
+   ev-cond-end    
+   (goto (reg continue)) 
+#+END_SRC
+
+*** 5.25
+     :PROPERTIES:
+     :CUSTOM_ID: section-2
+     :END:
+
+搁置
+
+*** 5.26
+     :PROPERTIES:
+     :CUSTOM_ID: section-3
+     :END:
+
+最大深度是10
+
+压栈次数是35*n + 29
+
+*** 5.27
+     :PROPERTIES:
+     :CUSTOM_ID: section-4
+     :END:
+
+递归的压栈次数和迭代差不多，但是栈的深度应该是n的线性函数
+
+*** 5.28
+     :PROPERTIES:
+     :CUSTOM_ID: section-5
+     :END:
+
+自行模拟
+
+*** 5.29
+     :PROPERTIES:
+     :CUSTOM_ID: section-6
+     :END:
+
+空间需求大致是递归阶乘的两倍，大约8*n
+
+S(n) *=* S(n-1) *+* S(n-2) *+* 42
+
+S(n) *=* 60Fib(n+1) *-* 42
+
+*** 5.30
+     :PROPERTIES:
+     :CUSTOM_ID: section-7
+     :END:
+
+搁置
